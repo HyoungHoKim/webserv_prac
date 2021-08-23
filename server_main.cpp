@@ -16,7 +16,9 @@ int main(int argc, char *argv[])
 	{
 		Server server;
 
-		server.init_Server(8000);
+		if (!server.init_Server(8000))
+			return (-1);
+
 		server.run();
 	}
 	else
