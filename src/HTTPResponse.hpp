@@ -1,6 +1,7 @@
 #ifndef HTTPRESPONSE_HPP
 #define HTTPRESPONSE_HPP
 
+#include "ByteBuffer.hpp"
 #include "HTTPMessage.hpp"
 
 class HTTPResponse : public HTTPMessage

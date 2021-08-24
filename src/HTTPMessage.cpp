@@ -1,16 +1,20 @@
 #include "HTTPMessage.hpp"
 
 HTTPMessage::HTTPMessage()
+: ByteBuffer(4096)
 {
 	this->init();
 }
 
-HTTPMessage::HTTPMessage(std::string nData)
+HTTPMessage::HTTPMessage(std::string sData)
+: ByteBuffer(sData.size() + 1)
 {
+	putBytes((byte*)sData.c_str(), sData.size() + 1);
 	this->init();
 }
 
 HTTPMessage::HTTPMessage(byte *pData, unsigned int len)
+: ByteBuffer(pData, len)
 {
 	this->init();
 }
@@ -174,7 +178,7 @@ void HTTPMessage::addHeader(std::string line)
 	std::string key = "";
 	std::string value = "";
 	size_t kpos;
-	int i = 0;
+	unsigned long i = 0;
 	kpos = line.find(':');
 	if (kpos == std::string::npos)
 	{
@@ -196,6 +200,13 @@ void HTTPMessage::addHeader(std::string key, std::string value)
 	this->headers->insert(std::pair<std::string, std::string>(key, value));
 }
 
+void HTTPMessage::addHeader(std::string key, int value)
+{
+	std::stringstream sz;
+	sz << value;
+	headers->insert(std::pair<std::string, std::string>(key, sz.str()));
+}
+
 std::string HTTPMessage::getHeaderValue(std::string key)
 {
 	char c;
@@ -205,7 +216,7 @@ std::string HTTPMessage::getHeaderValue(std::string key)
 
 	if (it == this->headers->end())
 	{
-		for (int i = 0; i < key.length(); i++)
+		for (unsigned long i = 0; i < key.length(); i++)
 		{
 			c = key.at(i);
 			key_lower += tolower(c);

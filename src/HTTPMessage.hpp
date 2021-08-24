@@ -7,7 +7,7 @@
 
 #include "ByteBuffer.hpp"
 
-#define DEFAULT_HPP_VERSION "HTPP/1.1"
+#define DEFAULT_HPP_VERSION "HTTP/1.1"
 #define NUM_METHODS 9
 
 enum Method
@@ -78,13 +78,12 @@ public:
 	virtual bool parse() = 0;
 
 	// Create helpers
-	void putBytes(byte *b, unsigned int len);
 	void putLine(std::string str = "", bool crlf_end = true);
 	void putHeaders();
 
 	// Parse helpers
 	std::string getLine();
-	std::string getStrElement(char delim = 0x20); // 0x20 = "space"
+	std::string getStrElement(char delim = ' '); // 0x20 = "space"
 	void parseHeaders();
 	bool parseBody();
 

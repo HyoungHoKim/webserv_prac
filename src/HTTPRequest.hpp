@@ -1,6 +1,7 @@
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
+#include "ByteBuffer.hpp"
 #include "HTTPMessage.hpp"
 
 class HTTPRequest : public HTTPMessage

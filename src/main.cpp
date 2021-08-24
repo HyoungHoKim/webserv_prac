@@ -4,8 +4,8 @@
 
 void *startServer(void *arg)
 {
-	Server server;
-	server.init_Server(atoi((char*)arg));
+	Server server(atoi((char*)arg), "./htdocs");
+	server.init_Server();
 	server.run();
 	return (NULL);
 }
@@ -14,21 +14,30 @@ int main(int argc, char *argv[])
 {
 	if (argc == 1)
 	{
-		Server server;
+		Server server(8000, "./htdocs");
 
-		if (!server.init_Server(8000))
+		if (!server.init_Server())
+			return (-1);
+
+		server.run();
+	}
+	else if (argc == 2)
+	{
+		Server server(atoi(argv[1]), "./htdocs");
+
+		if (!server.init_Server())
 			return (-1);
 
 		server.run();
 	}
 	else
 	{
-		vector<pthread_t> t_ids;
+		std::vector<pthread_t> t_ids;
 		for (int i = 1; i < argc; i++)
 		{
 			pthread_t t_id;
-			t_ids.push_back(t_id);
 			pthread_create(&t_id, NULL, startServer, (void*)argv[i]);
+			t_ids.push_back(t_id);
 		}
 
 		for (int i = 1; i < argc; i++)

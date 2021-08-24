@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 #include <cstring>
-#include <unordered_map>
+#include <map>
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,14 +17,14 @@
 const static char* const validIndexes[] = 
 {
 	"index.html",
-	"index.htm"
+	"index1.htm1"
 };
 
 class ResourceHost
 {
 private:
 	std::string baseDiskPath;
-	std::unordered_map<std::string, std::string> mimeMap;
+	std::map<std::string, std::string> mimeMap;
 
 	std::string lookupMimeType(std::string ext);
 	Resource *readFile(std::string path, struct stat sb);
@@ -38,7 +38,6 @@ public:
 	void putResource(Resource *res, bool writeToDisk);
 
 	Resource *getResource(Resource *res, bool writeToDisk);
-
 	Resource *getResource(std::string uri);
 };
 
