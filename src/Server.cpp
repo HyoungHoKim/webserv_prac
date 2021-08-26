@@ -61,7 +61,7 @@ bool Server::init_Server(void)
 
 	fcntl(this->serv_sock, F_SETFL, O_NONBLOCK);
 
-	if (::bind(this->serv_sock, (struct sockaddr *)&(this->serv_adr), sizeof(this->serv_adr)) == -1)
+	if (bind(this->serv_sock, (struct sockaddr *)&(this->serv_adr), sizeof(this->serv_adr)) == -1)
 		return (exit_with_perror("bind() error!!!"));
 
 	if (listen(this->serv_sock, SOMAXCONN) != 0)
