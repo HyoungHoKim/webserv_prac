@@ -151,6 +151,9 @@ bool HTTPMessage::parseBody()
 	
 	contentLen = atoi(hlenstr.c_str());
 
+	// content length가 보낼 데이터보다 크다면 클라이언트 소켓이
+	// 남은 데이터가 더 있다고 판단하고 기다림 ->
+	// net::ERR_CONTENT_LENGTH_MISMATCH
 	if (contentLen > bytesRemaining() + 1)
 	{
 		std::stringstream pes;

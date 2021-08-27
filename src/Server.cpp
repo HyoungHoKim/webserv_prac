@@ -252,9 +252,12 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	bool disconnect = false;
 	byte *pData = NULL;
 
+	// TCP와 UDP의 최대 패킷 크기는 이론상 65,535
+	// 하지만 이너넷(2계층 데이터 패킷)을 사용한다면 최대 1500(MTU)보다
+	// 적은 크기로 지정하는 것이 좋다. 
 	if (avail_bytes > 1400)
 		avail_bytes = 1400;
-	else if (avail_bytes == 0)
+	else if (avail_bytes == 0) // 64는 최소단위
 		avail_bytes = 64;
 
 	SendQueueItem *item = cl->nextInSendQueue();
