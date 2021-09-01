@@ -253,3 +253,8 @@ Resource *ResourceHost::getResource(std::string uri)
 
 	return (res);
 }
+
+std::string ResourceHost::getBaseDiskPath(void) const
+{
+	return (this->baseDiskPath);
+}

@@ -36,6 +36,7 @@ public:
 	~ResourceHost();
 
 	void putResource(Resource *res, bool writeToDisk);
+	std::string getBaseDiskPath(void) const;
 
 	Resource *getResource(Resource *res, bool writeToDisk);
 	Resource *getResource(std::string uri);

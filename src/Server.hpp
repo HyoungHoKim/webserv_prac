@@ -14,6 +14,7 @@
 #include <iostream>
 #include <map>
 #include <vector>
+#include <fstream>
 
 #include "Client.hpp"
 #include "HTTPMessage.hpp"
@@ -62,6 +63,7 @@ public:
 
 	void handleRequest(Client *cl, HTTPRequest *req);
 	void handleGet(Client *cl, HTTPRequest *req);
+	void handlePost(Client *cl, HTTPRequest *req);
 
 	void sendStatusResponse(Client *cl, int status, std::string msg = "");
 	void sendResponse(Client *cl, HTTPResponse *resp, bool disconnect);

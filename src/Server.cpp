@@ -312,6 +312,9 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	case Method(GET):
 		handleGet(cl, req);
 		break;
+	case Method(POST):
+		handlePost(cl, req);
+		break;
 	default:
 		std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " <<
 			req->methodIntToStr(req->getMethod()) << std::endl;
@@ -334,9 +337,7 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 		resp->setStatus(Status(OK));
 		resp->addHeader("Content-Type", r->getMimeType());
 		resp->addHeader("Content-Length", r->getSize());
-
-		if (req->getMethod() == Method(GET))
-			resp->setData(r->getData(), r->getSize());
+		resp->setData(r->getData(), r->getSize());
 		
 		bool dc = false;
 
@@ -352,6 +353,60 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 	{
 		std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
 		sendStatusResponse(cl, Status(NOT_FOUND));
+	}
+}
+
+void Server::handlePost(Client *cl, HTTPRequest *req)
+{
+	std::cout << "GET Method processing" << std::endl;
+	std::string uri = req->getRequestUri();
+	Resource *r = resHost->getResource(uri);
+
+	// 파일이 존재하지 않을 시
+	if (!r)
+	{
+		std::string path = resHost->getBaseDiskPath() + uri;
+		// 생성 후 데이터 입력
+		std::ofstream fout(path);
+		fout << req->getData();
+
+		r = resHost->getResource(uri);
+		HTTPResponse *resp = new HTTPResponse();
+		resp->setStatus(Status(CREATE));
+		resp->addHeader("Location", r->getLocation());
+		
+		bool dc = false;
+		std::string connection_val = req->getHeaderValue("Connection");
+		if (connection_val.compare("close") == 0)
+			dc = true;
+
+		sendResponse(cl, resp, dc);
+		delete resp;
+		delete r;
+		fout.close();
+	}
+	else
+	{
+		std::ofstream fout(r->getLocation(), std::ios::out | std::ios::app);
+		fout << req->getData();
+		delete r;
+
+		r = resHost->getResource(uri);
+		HTTPResponse *resp = new HTTPResponse();
+		resp->setStatus(Status(OK));
+		resp->addHeader("Content-Type", r->getMimeType());
+		resp->addHeader("Content-Length", r->getSize());
+		resp->setData(r->getData(), r->getSize());
+		
+		bool dc = false;
+		std::string connection_val = req->getHeaderValue("Connection");
+		if (connection_val.compare("close") == 0)
+			dc = true;
+
+		sendResponse(cl, resp, dc);
+		delete resp;
+		delete r;
+		fout.close();
 	}
 }
 
