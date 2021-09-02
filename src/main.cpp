@@ -14,6 +14,8 @@ int main(int argc, char *argv[])
 {
 	// config 파일 파싱
 	
+	
+
 	if (argc == 1)
 	{
 		Server server(8000, "./htdocs");

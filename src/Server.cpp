@@ -223,6 +223,8 @@ void Server::readClient(Client *cl, int data_len)
 	int flags = 0;
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
 
+	std::cout << pData << std::endl;
+
 	if (lenRecv == 0)
 	{
 		std::cout << "[" << cl->getSocket() << "] has opted to close the connection" << std::endl;
@@ -255,8 +257,8 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	// TCP와 UDP의 최대 패킷 크기는 이론상 65,535
 	// 하지만 이너넷(2계층 데이터 패킷)을 사용한다면 최대 1500(MTU)보다
 	// 적은 크기로 지정하는 것이 좋다. 
-	if (avail_bytes > 1400)
-		avail_bytes = 1400;
+	if (avail_bytes > 1300)
+		avail_bytes = 1300;
 	else if (avail_bytes == 0) // 64는 최소단위
 		avail_bytes = 64;
 
@@ -315,6 +317,9 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	case Method(POST):
 		handlePost(cl, req);
 		break;
+	case Method(PUT):
+		handlePut(cl, req);
+		break;
 	default:
 		std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " <<
 			req->methodIntToStr(req->getMethod()) << std::endl;
@@ -358,7 +363,7 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 
 void Server::handlePost(Client *cl, HTTPRequest *req)
 {
-	std::cout << "GET Method processing" << std::endl;
+	std::cout << "POST Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
 	Resource *r = resHost->getResource(uri);
 
@@ -408,6 +413,41 @@ void Server::handlePost(Client *cl, HTTPRequest *req)
 		delete r;
 		fout.close();
 	}
+}
+
+void Server::handlePut(Client *cl, HTTPRequest *req)
+{
+	std::cout << "PUT Method processing" << std::endl;
+	std::string uri = req->getRequestUri();
+	Resource *r = resHost->getResource(uri);
+	int status = Status(NO_CONTENT);
+	std::string path;
+
+	// 파일이 존재하지 않을 시
+	if (!r)
+	{
+		path = resHost->getBaseDiskPath() + uri;
+		status = Status(CREATE);
+	}
+	else
+		path = r->getLocation();
+
+	std::ofstream fout(path);
+	fout << req->getData();
+
+	HTTPResponse *resp = new HTTPResponse();
+	resp->setStatus(status);
+	resp->addHeader("Location", path);
+	
+	bool dc = false;
+	std::string connection_val = req->getHeaderValue("Connection");
+	if (connection_val.compare("close") == 0)
+		dc = true;
+
+	sendResponse(cl, resp, dc);
+	delete resp;
+	delete r;
+	fout.close();
 }
 
 void Server::sendStatusResponse(Client *cl, int status, std::string msg)

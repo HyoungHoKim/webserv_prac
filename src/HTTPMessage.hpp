@@ -43,6 +43,7 @@ enum Status
 	// 2xx Success
 	OK = 200,
 	CREATE = 201,
+	NO_CONTENT = 204,
 
 	// 3xx Redirection
 

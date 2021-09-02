@@ -31,8 +31,10 @@ void HTTPResponse::determineStatusCode()
 		status = Status(CONTINUE);
 	else if (reason.find("OK") != std::string::npos)
 		status = Status(OK);
-	else if (reason.find("CREATE") != std::string::npos)
+	else if (reason.find("Create") != std::string::npos)
 		status = Status(CREATE);
+	else if (reason.find("No Content") != std::string::npos)
+		status = Status(NO_CONTENT);
 	else if (reason.find("Bad Request") != std::string::npos)
 		status = Status(BAD_REQUEST);
 	else if (reason.find("Not Found") != std::string::npos)
@@ -55,6 +57,9 @@ void HTTPResponse::determineReasonStr()
 		break;
 	case Status(CREATE):
 		reason = "Create";
+		break;
+	case Status(NO_CONTENT):
+		reason = "No Content";
 		break;
 	case Status(BAD_REQUEST):
 		reason = "Bad Request";

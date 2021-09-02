@@ -23,7 +23,7 @@
 #include "ResourceHost.hpp"
 
 #define INVALID_SOCKET -1
-#define QSIZE 1024
+#define QSIZE 1024 // 
 
 class Server
 {
@@ -64,6 +64,7 @@ public:
 	void handleRequest(Client *cl, HTTPRequest *req);
 	void handleGet(Client *cl, HTTPRequest *req);
 	void handlePost(Client *cl, HTTPRequest *req);
+	void handlePut(Client *cl, HTTPRequest *req);
 
 	void sendStatusResponse(Client *cl, int status, std::string msg = "");
 	void sendResponse(Client *cl, HTTPResponse *resp, bool disconnect);
