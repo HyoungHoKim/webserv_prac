@@ -1,15 +1,16 @@
 #include "Server.hpp"
 
-Server::Server(int port, std::string diskpath)
+Server::Server(ServerConfig &_sc)
 {
 	this->serv_sock = INVALID_SOCKET;
-	this->serv_port = port;
+	std::string _port = _sc.getListen();
+	this->serv_port = ft::stoi(_port);
 	this->kq = -1;
 
-	std::cout << "Port: " << port << std::endl;
-	std::cout << "Disk path: " << diskpath << std::endl;
+	std::cout << "Port: " << this->serv_port << std::endl;
+	std::cout << "Disk path: " << _sc.getLocations()[0].getRoot() << std::endl;
 
-	this->resHost = new ResourceHost(diskpath);
+	this->resHost = new ResourceHost(_sc.getLocations()[0].getRoot());
 }
 
 Server::Server(const Server &_server)

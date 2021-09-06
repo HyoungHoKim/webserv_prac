@@ -1,33 +1,30 @@
 #include "Server.hpp"
-
+#include "Config.hpp"
 #include <pthread.h>
 
 void *startServer(void *arg)
 {
-	Server server(atoi((char*)arg), "./htdocs");
-	server.init_Server();
+	ServerConfig *temp = reinterpret_cast<ServerConfig*>(arg);
+	Server server(*temp);
+	if (!server.init_Server())
+		return (NULL);
 	server.run();
 	return (NULL);
 }
 
 int main(int argc, char *argv[])
 {
-	// config 파일 파싱
+	// config 파일 파싱	
+    Config conf;
+    std::vector<ServerConfig> servers;
+    if (argc != 2)
+        exit(1);
+    conf.parseConfig(argv[1]);
+    servers = conf.getServers();
 	
-	
-
-	if (argc == 1)
+	if (servers.size() == 1)
 	{
-		Server server(8000, "./htdocs");
-
-		if (!server.init_Server())
-			return (-1);
-
-		server.run();
-	}
-	else if (argc == 2)
-	{
-		Server server(atoi(argv[1]), "./htdocs");
+		Server server(servers[0]);
 
 		if (!server.init_Server())
 			return (-1);
@@ -37,10 +34,10 @@ int main(int argc, char *argv[])
 	else
 	{
 		std::vector<pthread_t> t_ids;
-		for (int i = 1; i < argc; i++)
+		for (size_t i = 0; i < servers.size(); i++)
 		{
 			pthread_t t_id;
-			pthread_create(&t_id, NULL, startServer, (void*)argv[i]);
+			pthread_create(&t_id, NULL, startServer, reinterpret_cast<void*>(&servers[i]));
 			t_ids.push_back(t_id);
 		}
 

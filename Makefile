@@ -4,7 +4,8 @@ D_SRCS	:= src
 D_OBJS	:= obj
 
 SRC		:= main.cpp ByteBuffer.cpp Client.cpp HTTPMessage.cpp HTTPRequest.cpp \
-		   HTTPResponse.cpp ResourceHost.cpp Server.cpp Resource.cpp
+		   HTTPResponse.cpp ResourceHost.cpp Server.cpp Resource.cpp Config.cpp \
+		   ServerConfig.cpp libft.cpp
 
 SRCS	:= $(addprefix, $(D_SRCS)/, $(SRC))
 OBJS	:= $(addprefix $(D_OBJS)/, $(SRC:.cpp=.o))

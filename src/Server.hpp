@@ -21,6 +21,7 @@
 #include "HTTPRequest.hpp"
 #include "HTTPResponse.hpp"
 #include "ResourceHost.hpp"
+#include "Config.hpp"
 
 #define INVALID_SOCKET -1
 #define QSIZE 1024 // 
@@ -39,7 +40,7 @@ private:
 	ResourceHost *resHost;
 
 public:
-	Server(int port, std::string diskpath);
+	Server(ServerConfig &_sc);
 	~Server();
 	Server(const Server &_server);
 	Server &operator=(const Server &_server);
