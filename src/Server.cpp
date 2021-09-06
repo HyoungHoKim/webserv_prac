@@ -270,7 +270,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
 
-	std::cout << pData << std::endl;
+	std::cout << "------ Body ----- \n" << pData << std::endl;
 
 	if (avail_bytes >= remaining)
 		attempt_sent = remaining;
@@ -311,6 +311,7 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 
 	switch (req->getMethod())
 	{
+	case Method(HEAD):
 	case Method(GET):
 		handleGet(cl, req);
 		break;
@@ -333,7 +334,7 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 
 void Server::handleGet(Client *cl, HTTPRequest *req)
 {
-	std::cout << "GET Method processing" << std::endl;
+	std::cout << req->getMethod() << " Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
 	Resource *r = resHost->getResource(uri);
 
@@ -345,10 +346,11 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 		resp->setStatus(Status(OK));
 		resp->addHeader("Content-Type", r->getMimeType());
 		resp->addHeader("Content-Length", r->getSize());
-		resp->setData(r->getData(), r->getSize());
+
+		if (req->getMethod() == Method(GET))
+			resp->setData(r->getData(), r->getSize());
 		
 		bool dc = false;
-
 		std::string connection_val = req->getHeaderValue("Connection");
 		if (connection_val.compare("close") == 0)
 			dc = true;
