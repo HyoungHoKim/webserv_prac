@@ -450,6 +450,46 @@ void Server::handlePut(Client *cl, HTTPRequest *req)
 	fout.close();
 }
 
+void Server::handleDelete(Client *cl, HTTPRequest *Req)
+{
+	std::cout << "DELETE Method processing" << std::endl;
+	std::string uri = req->getRequestUri();
+	Resource *r = resHost->getResource(uri);
+
+	if (!r)
+	{
+		HTTPResponse *resp = new HTTPResponse();
+		resp->setStatus(Status(NOT_FOUND));
+		
+		bool dc = false;
+		std::string connection_val = req->getHeaderValue("Connection");
+		if (connection_val.compare("close") == 0)
+			dc = true;
+
+		sendResponse(cl, resp, dc);
+		delete resp;
+	}
+	else
+	{
+		if (remove(r->getLocation()) != 0)
+			exit_with_perror("Cannot delete file!!!");
+		
+		std::string delBody = 
+		"<!DOCTYPE html>\n\
+         <html>\n\
+         <body>\n\
+            <h1>File deleted</h1>\n\
+    	 </body>\n\
+    	 </html>";
+
+		resp->setStatus(Status(OK));
+		resp->addHeader("Content-Type", "text/html");
+		resp->addHeader("Content-Length", delBody);
+		resp->setData(r->getData(), r->getSize());
+
+	}
+}
+
 void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 {
 	HTTPResponse *resp = new HTTPResponse();

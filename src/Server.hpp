@@ -65,6 +65,7 @@ public:
 	void handleGet(Client *cl, HTTPRequest *req);
 	void handlePost(Client *cl, HTTPRequest *req);
 	void handlePut(Client *cl, HTTPRequest *req);
+	void handleDelete(Client *cl, HTTPRequest *Req);
 
 	void sendStatusResponse(Client *cl, int status, std::string msg = "");
 	void sendResponse(Client *cl, HTTPResponse *resp, bool disconnect);
