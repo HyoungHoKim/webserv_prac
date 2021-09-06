@@ -320,6 +320,9 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	case Method(PUT):
 		handlePut(cl, req);
 		break;
+	case Method(DELETE):
+		handleDelete(cl, req);
+		break;
 	default:
 		std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " <<
 			req->methodIntToStr(req->getMethod()) << std::endl;
@@ -450,7 +453,7 @@ void Server::handlePut(Client *cl, HTTPRequest *req)
 	fout.close();
 }
 
-void Server::handleDelete(Client *cl, HTTPRequest *Req)
+void Server::handleDelete(Client *cl, HTTPRequest *req)
 {
 	std::cout << "DELETE Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
@@ -458,23 +461,15 @@ void Server::handleDelete(Client *cl, HTTPRequest *Req)
 
 	if (!r)
 	{
-		HTTPResponse *resp = new HTTPResponse();
-		resp->setStatus(Status(NOT_FOUND));
-		
-		bool dc = false;
-		std::string connection_val = req->getHeaderValue("Connection");
-		if (connection_val.compare("close") == 0)
-			dc = true;
-
-		sendResponse(cl, resp, dc);
-		delete resp;
+		std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
+		sendStatusResponse(cl, Status(NOT_FOUND));
 	}
 	else
 	{
-		if (remove(r->getLocation()) != 0)
+		if (std::remove(r->getLocation().c_str()) != 0)
 			exit_with_perror("Cannot delete file!!!");
 		
-		std::string delBody = 
+		char delBody[] = 
 		"<!DOCTYPE html>\n\
          <html>\n\
          <body>\n\
@@ -482,11 +477,21 @@ void Server::handleDelete(Client *cl, HTTPRequest *Req)
     	 </body>\n\
     	 </html>";
 
+		HTTPResponse *resp = new HTTPResponse();
 		resp->setStatus(Status(OK));
 		resp->addHeader("Content-Type", "text/html");
-		resp->addHeader("Content-Length", delBody);
-		resp->setData(r->getData(), r->getSize());
+		resp->addHeader("Content-Length", strlen(delBody));
+		resp->setData(reinterpret_cast<byte*>(delBody), strlen(delBody));
 
+		bool dc = false;
+
+		std::string connection_val = req->getHeaderValue("Connection");
+		if (connection_val.compare("close") == 0)
+			dc = true;
+
+		sendResponse(cl, resp, dc);
+		delete resp;
+		delete r;
 	}
 }
 
