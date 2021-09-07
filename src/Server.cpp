@@ -5,6 +5,8 @@ Server::Server(ServerConfig &_sc)
 	this->serv_sock = INVALID_SOCKET;
 	std::string _port = _sc.getListen();
 	this->serv_port = ft::stoi(_port);
+	this->kqTimeout.tv_sec = 2;
+	this->kqTimeout.tv_nsec = 0;
 	this->kq = -1;
 
 	std::cout << "Port: " << this->serv_port << std::endl;
@@ -163,7 +165,7 @@ void Server::run(void)
 	struct kevent *curr_event;
 	while(1)
 	{
-		new_events = kevent(this->kq, NULL, 0, this->event_list, QSIZE, NULL);
+		new_events = kevent(this->kq, NULL, 0, this->event_list, QSIZE, &(this->kqTimeout));
 		
 		if (new_events <= 0)
 			continue;

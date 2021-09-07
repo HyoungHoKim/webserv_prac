@@ -32,6 +32,7 @@ private:
 	int serv_sock;
 	int serv_port;
 	struct sockaddr_in serv_adr;
+	struct timespec kqTimeout;
 	int kq;
 	struct kevent event_list[QSIZE];
 

@@ -9,6 +9,7 @@ void *startServer(void *arg)
 	if (!server.init_Server())
 		return (NULL);
 	server.run();
+	server.stop_server();
 	return (NULL);
 }
 
@@ -28,8 +29,9 @@ int main(int argc, char *argv[])
 
 		if (!server.init_Server())
 			return (-1);
-
+		
 		server.run();
+		server.stop_server();
 	}
 	else
 	{
