@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
         exit(1);
     conf.parseConfig(argv[1]);
     servers = conf.getServers();
-	
+
 	if (servers.size() == 1)
 	{
 		Server server(servers[0]);

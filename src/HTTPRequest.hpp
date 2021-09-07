@@ -8,6 +8,7 @@ class HTTPRequest : public HTTPMessage
 {
 private:
 	int method;
+	std::string config_dir;
 	std::string requestUri;
 
 protected:
@@ -43,6 +44,11 @@ public:
 	std::string getRequestUri()
 	{
 		return (requestUri);
+	}
+
+	std::string getConfig_dir()
+	{
+		return (config_dir);
 	}
 };
 

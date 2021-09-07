@@ -8,7 +8,7 @@
 #include "ByteBuffer.hpp"
 
 #define DEFAULT_HPP_VERSION "HTTP/1.1"
-#define NUM_METHODS 9
+#define NUM_METHODS 5
 
 enum Method
 {
@@ -17,10 +17,6 @@ enum Method
 	POST = 2,
 	PUT = 3,
 	DELETE = 4,
-	TRACE = 5,
-	OPTIONS = 6,
-	CONNECT = 7,
-	PATCH = 8
 };
 
 const static char* const requestMethodStr[NUM_METHODS] = {
@@ -28,11 +24,7 @@ const static char* const requestMethodStr[NUM_METHODS] = {
 	"GET",
 	"POST",
 	"PUT",
-	"DELETE",
-	"TRACE",
-	"OPTIONS",
-	"CONNECT",
-	"PATCH"
+	"DELETE"
 };
 
 enum Status

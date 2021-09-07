@@ -23,6 +23,7 @@ void HTTPRequest::init()
 {
 	this->method = 0;
 	this->requestUri = "";
+	this->config_dir = "/";
 }
 
 int HTTPRequest::methodStrToInt(std::string name)
@@ -80,8 +81,15 @@ bool HTTPRequest::parse()
 	std::string methodName = "";
 
 	methodName = getStrElement();
-	requestUri = getStrElement();
-	version = getLine();
+	this->requestUri = getStrElement();
+	this->version = getLine();
+
+	for (size_t i = 1; i < this->requestUri.length(); i++)
+	{
+		if (this->requestUri[i] == '/')
+			break;
+		this->config_dir += requestUri[i];
+	}
 
 	method = methodStrToInt(methodName);
 	if (method == -1)

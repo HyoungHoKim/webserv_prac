@@ -16,8 +16,7 @@
 
 const static char* const validIndexes[] = 
 {
-	"index.html",
-	"index1.htm1"
+	"index.html"
 };
 
 class ResourceHost
@@ -35,7 +34,6 @@ public:
 	ResourceHost(std::string base);
 	~ResourceHost();
 
-	void putResource(Resource *res, bool writeToDisk);
 	std::string getBaseDiskPath(void) const;
 
 	Resource *getResource(Resource *res, bool writeToDisk);

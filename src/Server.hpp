@@ -29,6 +29,7 @@
 class Server
 {
 private:
+	ServerConfig serv_config;
 	int serv_sock;
 	int serv_port;
 	struct sockaddr_in serv_adr;
@@ -63,6 +64,7 @@ public:
 	void readClient(Client *cl, int data_len);
 	bool writeClient(Client *cl, int avail_bytes);
 
+	bool check_allowed_methods(HTTPRequest *req, int& idx);
 	void handleRequest(Client *cl, HTTPRequest *req);
 	void handleGet(Client *cl, HTTPRequest *req);
 	void handlePost(Client *cl, HTTPRequest *req);

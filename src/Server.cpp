@@ -2,17 +2,14 @@
 
 Server::Server(ServerConfig &_sc)
 {
+	this->serv_config = _sc;
 	this->serv_sock = INVALID_SOCKET;
-	std::string _port = _sc.getListen();
+	std::string _port = this->serv_config.getListen();
 	this->serv_port = ft::stoi(_port);
 	this->kqTimeout.tv_sec = 2;
 	this->kqTimeout.tv_nsec = 0;
 	this->kq = -1;
-
-	std::cout << "Port: " << this->serv_port << std::endl;
-	std::cout << "Disk path: " << _sc.getLocations()[0].getRoot() << std::endl;
-
-	this->resHost = new ResourceHost(_sc.getLocations()[0].getRoot());
+	this->resHost = NULL;
 }
 
 Server::Server(const Server &_server)
@@ -299,6 +296,18 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	return (true);
 }
 
+// 여기 수정
+bool Server::check_allowed_methods(HTTPRequest *req, int& idx)
+{
+	std::vector<std::string> allowed_methods = this->serv_config.getLocations()[idx].getMethod();
+	for (size_t i = 0; i < allowed_methods.size(); i++)
+	{
+		if (req->methodIntToStr(req->getMethod()) == allowed_methods[i])
+			return (true);
+	}
+	return (false);
+}
+
 void Server::handleRequest(Client *cl, HTTPRequest *req)
 {
 	if (!req->parse())
@@ -311,6 +320,32 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 
 	std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " "
 		<< req->getRequestUri() << std::endl;
+
+	int idx = 0;
+	std::vector<ServerConfig> dir_config = this->serv_config.getLocations();
+	std::cout << req->getConfig_dir() << std::endl;
+	for (size_t i = 0; i < dir_config.size(); i++)
+	{
+		if (req->getConfig_dir() == dir_config[i].getUri())
+		{
+			idx = i;
+			break ;
+		}
+	}
+
+	if (static_cast<size_t>(idx) == dir_config.size())
+		idx = 0;
+	if (this->resHost)
+		delete this->resHost;
+	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot());
+
+	if (!check_allowed_methods(req, idx))
+	{
+		std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " <<
+			req->methodIntToStr(req->getMethod()) << std::endl;
+		sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
+		return;
+	}
 
 	switch (req->getMethod())
 	{
@@ -326,11 +361,6 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 		break;
 	case Method(DELETE):
 		handleDelete(cl, req);
-		break;
-	default:
-		std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " <<
-			req->methodIntToStr(req->getMethod()) << std::endl;
-		sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
 		break;
 	}
 }
@@ -383,10 +413,9 @@ void Server::handlePost(Client *cl, HTTPRequest *req)
 		std::ofstream fout(path);
 		fout << req->getData();
 
-		r = resHost->getResource(uri);
 		HTTPResponse *resp = new HTTPResponse();
 		resp->setStatus(Status(CREATE));
-		resp->addHeader("Location", r->getLocation());
+		resp->addHeader("Location",uri);
 		
 		bool dc = false;
 		std::string connection_val = req->getHeaderValue("Connection");
