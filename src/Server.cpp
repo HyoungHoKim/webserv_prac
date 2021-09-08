@@ -213,6 +213,7 @@ void Server::readClient(Client *cl, int data_len)
 	if (cl == NULL)
 		return ;
 	
+	
 	if (data_len <= 0)
 		data_len = 1400;
 	
