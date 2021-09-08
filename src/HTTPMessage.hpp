@@ -42,6 +42,7 @@ enum Status
 	// 4xx Client Error
 	BAD_REQUEST = 400,
 	NOT_FOUND = 404,
+	METHOD_NOT_ALLOW = 405,
 
 	// 5xx Server Error
 	SERVER_ERROR = 500,

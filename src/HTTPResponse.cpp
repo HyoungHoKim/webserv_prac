@@ -39,6 +39,8 @@ void HTTPResponse::determineStatusCode()
 		status = Status(BAD_REQUEST);
 	else if (reason.find("Not Found") != std::string::npos)
 		status = Status(NOT_FOUND);
+	else if (reason.find("Method Not Allowed") != std::string::npos)
+		status = Status(METHOD_NOT_ALLOW);
 	else if (reason.find("Server Error") != std::string::npos)
 		status = Status(SERVER_ERROR);
 	else if (reason.find("Not Implemented") != std::string::npos)
@@ -66,6 +68,9 @@ void HTTPResponse::determineReasonStr()
 		break;
 	case Status(NOT_FOUND):
 		reason = "Not Found";
+		break;
+	case Status(METHOD_NOT_ALLOW):
+		reason = "Method Not Allowed";
 		break;
 	case Status(SERVER_ERROR):
 		reason = "Internal Server Error";

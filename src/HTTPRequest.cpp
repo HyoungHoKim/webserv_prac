@@ -83,7 +83,7 @@ bool HTTPRequest::parse()
 
 	methodName = getStrElement();
 	temp_dir += get();
-	while (peek() != '/' && peek() != ' ')
+	while (peek() != '/' && peek() != ' ' && peek() != '\0')
 		temp_dir += get();
 	if (temp_dir.find('.') != std::string::npos)
 		this->requestUri = temp_dir;

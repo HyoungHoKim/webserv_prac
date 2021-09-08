@@ -223,7 +223,10 @@ void Server::readClient(Client *cl, int data_len)
 	int flags = 0;
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
 
+	std::cout << "-------- read Request --------" << std::endl; 
 	std::cout << pData << std::endl;
+	std::cout << "Length: " << lenRecv << std::endl;
+	std::cout << "------------------------------" << std::endl;
 
 	if (lenRecv == 0)
 	{
@@ -270,7 +273,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
 
-	std::cout << "------ Body ----- \n" << pData << std::endl;
+	// std::cout << "------ Body ----- \n" << pData << std::endl;
 
 	if (avail_bytes >= remaining)
 		attempt_sent = remaining;
@@ -348,7 +351,7 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	{
 		std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " <<
 			req->methodIntToStr(req->getMethod()) << std::endl;
-		sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
+		sendStatusResponse(cl, Status(METHOD_NOT_ALLOW));
 		return;
 	}
 
