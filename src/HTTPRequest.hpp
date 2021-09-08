@@ -3,6 +3,7 @@
 
 #include "ByteBuffer.hpp"
 #include "HTTPMessage.hpp"
+#include <sys/stat.h>
 
 class HTTPRequest : public HTTPMessage
 {

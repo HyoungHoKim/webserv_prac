@@ -321,9 +321,8 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " "
 		<< req->getRequestUri() << std::endl;
 
-	int idx = 0;
 	std::vector<ServerConfig> dir_config = this->serv_config.getLocations();
-	std::cout << req->getConfig_dir() << std::endl;
+	int idx = 0;
 	for (size_t i = 0; i < dir_config.size(); i++)
 	{
 		if (req->getConfig_dir() == dir_config[i].getUri())
@@ -332,12 +331,14 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 			break ;
 		}
 	}
-
 	if (static_cast<size_t>(idx) == dir_config.size())
 		idx = 0;
 	if (this->resHost)
 		delete this->resHost;
 	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot());
+	std::cout << "serv_config root : " << this->serv_config.getLocations()[idx].getRoot() << std::endl;
+	std::cout << "config_uri : " << req->getConfig_dir() << std::endl;
+	std::cout << "request_dir : " << req->getRequestUri() << std::endl;
 
 	if (!check_allowed_methods(req, idx))
 	{

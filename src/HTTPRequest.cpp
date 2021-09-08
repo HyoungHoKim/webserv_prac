@@ -79,18 +79,21 @@ bool HTTPRequest::parse()
 {
 	std::string initial = "";
 	std::string methodName = "";
+	std::string temp_dir = "";
 
 	methodName = getStrElement();
-	this->requestUri = getStrElement();
-	this->version = getLine();
-
-	for (size_t i = 1; i < this->requestUri.length(); i++)
+	temp_dir += get();
+	while (peek() != '/' && peek() != ' ')
+		temp_dir += get();
+	if (temp_dir.find('.') != std::string::npos)
+		this->requestUri = temp_dir;
+	else
 	{
-		if (this->requestUri[i] == '/')
-			break;
-		this->config_dir += requestUri[i];
+		this->config_dir = temp_dir;
+		this->requestUri = getStrElement();
 	}
-
+	this->version = getLine();
+	
 	method = methodStrToInt(methodName);
 	if (method == -1)
 	{
