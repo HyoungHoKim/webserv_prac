@@ -30,12 +30,12 @@ class	ServerConfig
 		int			getID() const;
 		std::string	getListen() const;
 		std::vector<ServerConfig> getLocations() const;
-		std::string getRoot() const;
+		std::string getRoot();
 		std::string getError() const;
 		std::string getUri() const;
 		size_t		getClientMaxBodySize() const;
 		std::vector<std::string> getMethod() const;
-		std::vector<std::string> getIndex() const;
+		std::vector<std::string> getIndex();
 		std::vector<std::string> getServerName() const;
 		void		initServer(std::vector<std::string>::iterator &it);
 		void		getDirective(std::vector<std::string>::iterator &it);

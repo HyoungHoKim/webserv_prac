@@ -335,10 +335,14 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 		idx = 0;
 	if (this->resHost)
 		delete this->resHost;
-	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot());
+	std::vector<std::string> config_index = this->serv_config.getLocations()[idx].getIndex();
+	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot(), config_index);
+	
+	
 	std::cout << "serv_config root : " << this->serv_config.getLocations()[idx].getRoot() << std::endl;
 	std::cout << "config_uri : " << req->getConfig_dir() << std::endl;
 	std::cout << "request_dir : " << req->getRequestUri() << std::endl;
+	
 
 	if (!check_allowed_methods(req, idx))
 	{

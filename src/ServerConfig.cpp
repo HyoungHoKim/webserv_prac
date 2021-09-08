@@ -147,7 +147,7 @@ std::vector<ServerConfig> ServerConfig::getLocations() const
 	return (this->locations);
 }
 
-std::string ServerConfig::getRoot() const
+std::string ServerConfig::getRoot()
 {
 	return (this->root);
 }
@@ -162,7 +162,7 @@ std::vector<std::string> ServerConfig::getMethod() const
 	return (this->method);
 }
 
-std::vector<std::string> ServerConfig::getIndex() const
+std::vector<std::string> ServerConfig::getIndex()
 {
 	return (this->index);
 }
