@@ -61,7 +61,7 @@ public:
 	Client *getClient(int clnt_sock);
 	void run(void);
 	
-	void readClient(Client *cl, int data_len);
+	bool readClient(Client *cl, int data_len);
 	bool writeClient(Client *cl, int avail_bytes);
 
 	bool check_allowed_methods(HTTPRequest *req, int& idx);

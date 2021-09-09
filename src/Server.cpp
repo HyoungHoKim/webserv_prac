@@ -190,10 +190,11 @@ void Server::run(void)
 
 				if (curr_event->filter == EVFILT_READ)
 				{
-					readClient(clientMap[curr_event->ident], curr_event->data);
-
-					add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-					add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+					if (readClient(clientMap[curr_event->ident], curr_event->data))
+					{
+						add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+						add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+					}
 				}
 				else if (curr_event->filter == EVFILT_WRITE)
 				{
@@ -208,42 +209,36 @@ void Server::run(void)
 	}
 }
 
-void Server::readClient(Client *cl, int data_len)
+bool Server::readClient(Client *cl, int data_len)
 {
 	if (cl == NULL)
-		return ;
-	
+		return (false);
 	
 	if (data_len <= 0)
 		data_len = 1400;
 	
-	HTTPRequest *req;
 	char *pData = new char[data_len];
 	bzero(pData, data_len);
 
-	int flags = 0;
-	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, flags);
-
-	std::cout << "-------- read Request --------" << std::endl; 
+	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	std::cout << pData << std::endl;
-	std::cout << "Length: " << lenRecv << std::endl;
-	std::cout << "------------------------------" << std::endl;
+	std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl;
 
 	if (lenRecv == 0)
 	{
 		std::cout << "[" << cl->getSocket() << "] has opted to close the connection" << std::endl;
+		cl->getRequset()->printData();
+		handleRequest(cl, cl->getRequset());
 		disconnected_client(cl);
+		return (true);
 	}
 	else if (lenRecv < 0)
 		disconnected_client(cl);
 	else
-	{
-		req = new HTTPRequest((byte*)pData, lenRecv);
-		handleRequest(cl, req);
-		delete req;
-	}
+		cl->recvRequestData(pData);
 
 	delete[] pData;
+	return (false);
 }
 
 bool Server::writeClient(Client *cl, int avail_bytes)

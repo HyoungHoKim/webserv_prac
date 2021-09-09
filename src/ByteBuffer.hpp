@@ -145,6 +145,15 @@ public:
 	{
 		return (wpos);
 	}
+
+	void printData()
+	{
+		std::cout << "-------- read Request --------" << std::endl;
+		for (int i = 0; i < (int)size(); i++)
+			std::cout << buf[i];
+		std::cout << "\n Length: " << size() << std::endl;
+		std::cout << "------------------------------" << std::endl;
+	}
 };
 
 #endif
