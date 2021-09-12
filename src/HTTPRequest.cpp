@@ -1,3 +1,5 @@
+#include <cctype>
+
 #include "HTTPMessage.hpp"
 #include "HTTPRequest.hpp"
 
@@ -21,9 +23,10 @@ HTTPRequest::~HTTPRequest()
 
 void HTTPRequest::init()
 {
+	this->isPreBodyDone = false;
 	this->method = 0;
 	this->requestUri = "";
-	this->config_dir = "/";
+	this->config_dir = "";
 }
 
 int HTTPRequest::methodStrToInt(std::string name)
@@ -75,39 +78,120 @@ byte* HTTPRequest::create()
 	return (createRetData);
 }
 
-bool HTTPRequest::parse()
+bool HTTPRequest::checkMethod(std::string& startLine)
 {
-	std::string initial = "";
 	std::string methodName = "";
-	std::string temp_dir = "";
+	int spacePos = startLine.find(' ');
 
-	methodName = getStrElement();
-	temp_dir += get();
-	while (peek() != '/' && peek() != ' ' && peek() != '\0')
-		temp_dir += get();
-	if (temp_dir.find('.') != std::string::npos)
-		this->requestUri = temp_dir;
+	methodName = startLine.substr(0, spacePos);
+	startLine = startLine.substr(spacePos + 1);
+
+	if (methodName == "")
+		return (false);
+	for (size_t i = 0; i < methodName.length(); i++)
+	{
+		if (isupper(methodName[i]) == 0)
+			return (false);
+	}
+	this->method = methodStrToInt(methodName);
+	return (true);
+}
+
+bool HTTPRequest::checkUri(std::string& startLine)
+{
+	std::string urlName = "";
+	std::string dirName = "";
+	int spacePos = startLine.find(' ');
+
+	urlName = startLine.substr(0, spacePos);
+	startLine = startLine.substr(spacePos + 1);
+	
+	if (urlName == "")
+		return (false);
+	if (urlName[0] != '/')
+		return (false);
+	dirName += "/";
+	size_t i = 1;
+	for (; i < urlName.length(); i++)
+	{
+		if (urlName[i] == '/')
+			break;
+		dirName += urlName[i];
+	}
+	if (dirName == urlName)
+	{
+		if (dirName.find(".") == std::string::npos)
+			this->config_dir = dirName;
+		else
+		{
+			this->config_dir = "/";
+			this->requestUri = dirName;
+		}
+	}
 	else
 	{
-		this->config_dir = temp_dir;
-		this->requestUri = getStrElement();
+		if (dirName.find(".") == std::string::npos)
+		{
+			this->config_dir = dirName;
+			this->requestUri = urlName.substr(i);
+		}
+		else
+			return (false);
 	}
-	this->version = getLine();
-	
-	method = methodStrToInt(methodName);
-	if (method == -1)
+	return (true);	
+}
+
+int HTTPRequest::parseStartLine()
+{
+	std::string startLine = getLine();
+	if (startLine != "")
 	{
-		parseErrorStr = "Invalid Method: " + methodName;
-		return (false);
+		if (!checkMethod(startLine))
+		{
+			erase(0, getReadPos());
+			return (Status(BAD_REQUEST));
+		}
+		if (!checkUri(startLine))
+		{
+			erase(0, getReadPos());
+			return (Status(BAD_REQUEST));
+		}
+		this->version = startLine;
+		if (this->version != "HTTP/1.1")
+		{
+			erase(0, getReadPos());
+			return (Status(BAD_REQUEST));
+		}
+		return (Parsing(SUCESSES));
 	}
+	else
+		return (Parsing(REREAD));
+}
 
-	parseHeaders();
+int HTTPRequest::parse()
+{
+	int status = 0;
 
+	if (!(this->isPreBodyDone))
+	{
+		setReadPos(0);
+		//std::cout << "StartLine Parsing Start" << std::endl;
+		status = parseStartLine();
+		//std::cout << "Header Parsing Start" << std::endl;
+		status = parseHeaders();
+		if (status == Parsing(SUCESSES))
+		{
+			//std::cout << "PreBody Parsing Done" << std::endl;
+			this->isPreBodyDone = true;
+			checkChunked();
+			erase(0, getReadPos());
+		}
+	}
+	if (!(this->isPreBodyDone))
+		return (Parsing(REREAD));
 	if ((method != POST) && (method != PUT))
-		return (true);
-	
+		return (Parsing(SUCESSES));
 	if (!parseBody())
 		return (false);
-
 	return (true);
 }

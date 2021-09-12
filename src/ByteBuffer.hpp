@@ -88,6 +88,7 @@ public:
 	}
 
 	void replace(byte key, byte rep, unsigned int start = 0, bool firstOccuranceOnly = false);
+	void erase(int startPos, int endPos);
 
 	// Read
 	byte peek();
@@ -151,8 +152,7 @@ public:
 		std::cout << "-------- read Request --------" << std::endl;
 		for (int i = 0; i < (int)size(); i++)
 			std::cout << buf[i];
-		std::cout << "\n Length: " << size() << std::endl;
-		std::cout << "------------------------------" << std::endl;
+		std::cout << "\n------------------------------" << std::endl;
 	}
 };
 

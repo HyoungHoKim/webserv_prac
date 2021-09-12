@@ -31,6 +31,7 @@ void HTTPMessage::init()
 
 	this->data = NULL;
 	this->dataLen = 0;
+	this->isChunked = false;
 
 	this->version = DEFAULT_HPP_VERSION;
 
@@ -120,7 +121,23 @@ std::string HTTPMessage::getStrElement(char delim)
 	return (ret);
 }
 
-void HTTPMessage::parseHeaders()
+bool HTTPMessage::checkHeaderEnd()
+{
+	std::string flag = "";
+
+	setReadPos(getReadPos() - 4);
+	for (int i = 0; i < 4; i++)
+	{
+		flag += getChar();
+	}
+
+	if (flag[0] == 13 && flag[1] == 10 
+		&& flag[2] == 13 && flag[3] == 10)
+		return (true);
+	return (false);
+}
+
+int HTTPMessage::parseHeaders()
 {
 	std::string hline = "";
 	std::string app = "";
@@ -130,14 +147,28 @@ void HTTPMessage::parseHeaders()
 	while (hline.size() > 0)
 	{
 		app = hline;
-		while (app[app.size() - 1] == ',')
+		size_t kpos = app.find(':');
+		if (kpos == std::string::npos)
 		{
-			app = getLine();
-			hline += app;
+			std::cout << "Could not addHeader: " << app.c_str() << std::endl;
+			return (Status(BAD_REQUEST));
 		}
 		addHeader(hline);
 		hline = getLine();
 	}
+
+	if (checkHeaderEnd())
+		return (Parsing(SUCESSES));
+	return (Parsing(REREAD));
+}
+
+void HTTPMessage::checkChunked()
+{
+	if (headers->find("Transfer-Encoding") != headers->end()
+		&& (*headers)["Transfer-Encoding"] == "chunked")
+		this->isChunked = true;
+	else
+		this->isChunked = false;
 }
 
 bool HTTPMessage::parseBody()

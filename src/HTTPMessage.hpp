@@ -49,6 +49,12 @@ enum Status
 	NOT_IMPLEMENTED = 501
 };
 
+enum Parsing
+{
+	SUCESSES,
+	REREAD
+};
+
 class HTTPMessage : public ByteBuffer
 {
 private:
@@ -61,6 +67,7 @@ protected:
 	// Message Body data (Resource in the case of a response, extra parameters in the case of a request)
 	byte* data;
 	unsigned int dataLen;
+	bool isChunked;
 	virtual void init();
 
 public:
@@ -70,7 +77,7 @@ public:
 	virtual ~HTTPMessage();
 
 	virtual byte* create() = 0;
-	virtual bool parse() = 0;
+	virtual int parse() = 0;
 
 	// Create helpers
 	void putLine(std::string str = "", bool crlf_end = true);
@@ -79,8 +86,11 @@ public:
 	// Parse helpers
 	std::string getLine();
 	std::string getStrElement(char delim = ' '); // 0x20 = "space"
-	void parseHeaders();
+	
+	bool checkHeaderEnd();
+	int parseHeaders();
 	bool parseBody();
+	void checkChunked();
 
 	void addHeader(std::string line);
 	void addHeader(std::string key, std::string value);

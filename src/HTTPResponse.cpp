@@ -103,7 +103,7 @@ byte *HTTPResponse::create()
 	return (createRetData);
 }
 
-bool HTTPResponse::parse()
+int HTTPResponse::parse()
 {
 	std::string statusstr;
 

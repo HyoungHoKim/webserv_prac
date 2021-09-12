@@ -68,7 +68,6 @@ Resource *ResourceHost::readDirectory(std::string path, struct stat sb)
 	for (int i = 0; i < numIndexes; i++)
 	{
 		loadIndex = path + validIndexes[i];
-		std::cout << loadIndex << std::endl;
 		if (stat(loadIndex.c_str(), &sidx) != -1)
 			return (readFile(loadIndex.c_str(), sidx));
 	}
@@ -131,7 +130,6 @@ Resource *ResourceHost::getResource(std::string uri)
 		return (NULL);
 
 	std::string path = baseDiskPath + uri;
-	std::cout << "path : " << path << std::endl;
 	Resource *res = NULL;
 
 	struct stat sb;

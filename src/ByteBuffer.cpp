@@ -93,6 +93,19 @@ void ByteBuffer::replace(byte key, byte rep, unsigned int start, bool firstOccur
 	}
 }
 
+void ByteBuffer::erase(int startPos, int endPos)
+{
+	if (startPos == 0 && endPos == static_cast<int>(size()))
+		clear();
+	else
+	{
+		std::vector<byte>::iterator iter = this->buf.begin();
+		this->rpos -= (endPos - startPos);
+		this->wpos -= (endPos - startPos);
+		buf.erase(iter + startPos, iter + endPos);
+	}
+}
+
 byte ByteBuffer::peek()
 {
 	return (read<byte>(rpos));

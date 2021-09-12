@@ -26,6 +26,12 @@ void Client::recvRequestData(char *buf)
 	}
 }
 
+void Client::deleteRequest()
+{
+	delete this->req;
+	this->req = NULL;
+}
+
 void Client::addToSendQueue(SendQueueItem *item)
 {
 	sendQueue.push(item);

@@ -43,6 +43,7 @@ public:
 	}
 
 	void recvRequestData(char *buf);
+	void deleteRequest();
 
 	void addToSendQueue(SendQueueItem *item);
 	unsigned int sendQueueSize();

@@ -23,7 +23,7 @@ public:
 	virtual ~HTTPResponse();
 
 	virtual byte *create();
-	virtual bool parse();
+	virtual int parse();
 
 	void setStatus (int scode)
 	{

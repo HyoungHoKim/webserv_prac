@@ -221,23 +221,36 @@ bool Server::readClient(Client *cl, int data_len)
 	bzero(pData, data_len);
 
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
-	std::cout << pData << std::endl;
-	std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl;
+	cl->recvRequestData(pData);
+	cl->getRequset()->printData();
+	delete[] pData;
+	std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
+	int status = cl->getRequset()->parse();
+
+	if (status == Status(BAD_REQUEST))
+	{
+		std::cout << "[" << cl->getClientIP() << "] There was an error processing thre request type: " 
+			<< cl->getRequset()->methodIntToStr(cl->getRequset()->getMethod()) << std::endl;
+		sendStatusResponse(cl, Status(BAD_REQUEST), cl->getRequset()->getParseError());
+		cl->deleteRequest();
+		return (false);
+	}
+	else if (status == Parsing(REREAD))
+		return (false);
 
 	if (lenRecv == 0)
 	{
 		std::cout << "[" << cl->getSocket() << "] has opted to close the connection" << std::endl;
-		cl->getRequset()->printData();
-		handleRequest(cl, cl->getRequset());
 		disconnected_client(cl);
-		return (true);
 	}
 	else if (lenRecv < 0)
 		disconnected_client(cl);
 	else
-		cl->recvRequestData(pData);
-
-	delete[] pData;
+	{
+		handleRequest(cl, cl->getRequset());
+		cl->deleteRequest();
+		return (true);
+	}
 	return (false);
 }
 
@@ -246,19 +259,16 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	if (cl == NULL)
 		return (false);
 	
-	std::cout << "avail_bytes: " << avail_bytes << std::endl;
+	// std::cout << "avail_bytes: " << avail_bytes << std::endl;
  	int actual_sent = 0;
 	int attempt_sent = 0;
 	int remaining = 0;
 	bool disconnect = false;
 	byte *pData = NULL;
-
-	// TCP와 UDP의 최대 패킷 크기는 이론상 65,535
-	// 하지만 이너넷(2계층 데이터 패킷)을 사용한다면 최대 1500(MTU)보다
-	// 적은 크기로 지정하는 것이 좋다. 
+ 
 	if (avail_bytes > 1300)
 		avail_bytes = 1300;
-	else if (avail_bytes == 0) // 64는 최소단위
+	else if (avail_bytes == 0)
 		avail_bytes = 64;
 
 	SendQueueItem *item = cl->nextInSendQueue();
@@ -282,7 +292,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	else
 		disconnect = true;
 
-	std::cout << "[" << cl->getClientIP() << "] was sent " << actual_sent << " bytes " << std::endl;
+	// std::cout << "[" << cl->getClientIP() << "] was sent " << actual_sent << " bytes " << std::endl;
 
 	if (item->getOffset() >= item->getSize())
 		cl->dequeueFromSendQueue();
@@ -309,16 +319,8 @@ bool Server::check_allowed_methods(HTTPRequest *req, int& idx)
 
 void Server::handleRequest(Client *cl, HTTPRequest *req)
 {
-	if (!req->parse())
-	{
-		std::cout << "[" << cl->getClientIP() << "] There was an error processing thre request type: " 
-			<< req->methodIntToStr(req->getMethod()) << std::endl;
-		sendStatusResponse(cl, Status(BAD_REQUEST), req->getParseError());
-		return;
-	}
-
-	std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " "
-		<< req->getRequestUri() << std::endl;
+	// std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " "
+	// 	<< req->getRequestUri() << std::endl;
 
 	std::vector<ServerConfig> dir_config = this->serv_config.getLocations();
 	int idx = 0;
@@ -331,17 +333,14 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 		}
 	}
 	if (static_cast<size_t>(idx) == dir_config.size())
+	{
 		idx = 0;
+		req->setRequestUri(req->getConfig_dir() + req->getRequestUri());
+	}
 	if (this->resHost)
 		delete this->resHost;
 	std::vector<std::string> config_index = this->serv_config.getLocations()[idx].getIndex();
 	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot(), config_index);
-	
-	
-	std::cout << "serv_config root : " << this->serv_config.getLocations()[idx].getRoot() << std::endl;
-	std::cout << "config_uri : " << req->getConfig_dir() << std::endl;
-	std::cout << "request_dir : " << req->getRequestUri() << std::endl;
-	
 
 	if (!check_allowed_methods(req, idx))
 	{
@@ -371,13 +370,13 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 
 void Server::handleGet(Client *cl, HTTPRequest *req)
 {
-	std::cout << req->getMethod() << " Method processing" << std::endl;
+	std::cout << "GET or HEAD" << " Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
 	Resource *r = resHost->getResource(uri);
 
 	if (r != NULL)
 	{
-		std::cout << "[" << cl->getClientIP() << "]" << "Sending file: " << uri << std::endl;
+		// std::cout << "[" << cl->getClientIP() << "]" << "Sending file: " << uri << std::endl;
 
 		HTTPResponse *resp = new HTTPResponse();
 		resp->setStatus(Status(OK));
