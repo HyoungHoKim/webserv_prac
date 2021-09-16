@@ -10,6 +10,7 @@ class HTTPRequest : public HTTPMessage
 {
 private:
 	bool isPreBodyDone;
+	bool isError;
 
 	int method;
 	std::string config_dir;

@@ -118,6 +118,7 @@ void Server::disconnected_client(Client *cl, bool mapErase)
 	add_kevent(cl->getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
 	
 	close(cl->getSocket());
+	cl->deleteRequest();
 
 	if (mapErase)
 		clientMap.erase(cl->getSocket());
@@ -190,19 +191,20 @@ void Server::run(void)
 				}
 				*/
 
-				if (curr_event->filter == EVFILT_READ)
-				{
-					readClient(clientMap[curr_event->ident], curr_event->data);
-					
-					add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-					add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
-				}
-				else if (curr_event->filter == EVFILT_WRITE)
+				if (curr_event->filter == EVFILT_WRITE)
 				{
 					if (!writeClient(clientMap[curr_event->ident], curr_event->data))
 					{
 						add_kevent(curr_event->ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
 						add_kevent(curr_event->ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+					}
+				}
+				else if (curr_event->filter == EVFILT_READ)
+				{
+					if (readClient(clientMap[curr_event->ident], curr_event->data))
+					{
+						add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+						add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 					}
 				}
 			}
@@ -223,10 +225,10 @@ bool Server::readClient(Client *cl, int data_len)
 
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
-	//std::cout << pData << std::endl;
-	//cl->getRequset()->printData();
-	//std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
-	//std::cout << "------------------------------" << std::endl;
+	std::cout << pData << std::endl;
+	cl->getRequset()->printData();
+	std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
+	std::cout << "------------------------------" << std::endl;
 	delete[] pData;
 	int status = cl->getRequset()->parse();
 
@@ -236,10 +238,14 @@ bool Server::readClient(Client *cl, int data_len)
 			<< cl->getRequset()->methodIntToStr(cl->getRequset()->getMethod()) << std::endl;
 		sendStatusResponse(cl, Status(BAD_REQUEST), cl->getRequset()->getParseError());
 		cl->deleteRequest();
-		return (false);
+		return (true);
 	}
-	else if (status == Parsing(REREAD))
-		return (false);
+	else if (status == Parsing(SUCESSES))
+	{
+		handleRequest(cl, cl->getRequset());
+		cl->deleteRequest();
+		return (true);
+	}
 
 	if (lenRecv == 0)
 	{
@@ -248,12 +254,7 @@ bool Server::readClient(Client *cl, int data_len)
 	}
 	else if (lenRecv < 0)
 		disconnected_client(cl);
-	else
-	{
-		handleRequest(cl, cl->getRequset());
-		cl->deleteRequest();
-		return (true);
-	}
+	
 	return (false);
 }
 
@@ -289,6 +290,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 		attempt_sent = avail_bytes;
 
 	actual_sent = send(cl->getSocket(), pData + (item->getOffset()), attempt_sent, 0);
+	std::cout << "send Data" << std::endl;
 	if (actual_sent >= 0)
 		item->setOffset(item->getOffset() + actual_sent);
 	else

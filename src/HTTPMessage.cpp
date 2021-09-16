@@ -234,7 +234,7 @@ int HTTPMessage::parseBody_chunked()
 		{
 			body += line;
 			erase(0, getReadPos());
-			//this->chunk_size = 0;
+			this->chunk_size = 0;
 			this->chunked_status = false;
 		}
 	}
