@@ -32,6 +32,8 @@ void HTTPMessage::init()
 	this->data = NULL;
 	this->dataLen = 0;
 	this->isChunked = false;
+	this->chunked_status = false;
+	this->chunk_size = 0;
 
 	this->version = DEFAULT_HPP_VERSION;
 
@@ -67,12 +69,17 @@ std::string HTTPMessage::getLine()
 	for (unsigned int i = startPos; i < size(); i++)
 	{
 		c = peek();
-		if (c == 13 || c == 10)
+		if (c == 13)
 		{
-			newLineReached = true;
-			break;
+			c = get();
+			if (peek() == 10)
+			{
+				newLineReached = true;
+				get();
+				break;
+			}
+			setReadPos(getReadPos() - 1);
 		}
-
 		ret += getChar();
 	}
 
@@ -81,19 +88,6 @@ std::string HTTPMessage::getLine()
 		setReadPos(startPos);
 		ret = "";
 		return (ret);
-	}
-
-	unsigned int k = 0;
-	for (unsigned int i = getReadPos(); i < size(); i++)
-	{
-		if (k++ >= 2)
-			break;
-		c = getChar();
-		if (c != 13 && c != 10)
-		{
-			setReadPos(getReadPos() - 1);
-			break;
-		}
 	}
 	return (ret);
 }
@@ -127,9 +121,7 @@ bool HTTPMessage::checkHeaderEnd()
 
 	setReadPos(getReadPos() - 4);
 	for (int i = 0; i < 4; i++)
-	{
 		flag += getChar();
-	}
 
 	if (flag[0] == 13 && flag[1] == 10 
 		&& flag[2] == 13 && flag[3] == 10)
@@ -144,7 +136,7 @@ int HTTPMessage::parseHeaders()
 
 	hline = getLine();
 
-	while (hline.size() > 0)
+	while (hline != "")
 	{
 		app = hline;
 		size_t kpos = app.find(':');
@@ -156,45 +148,52 @@ int HTTPMessage::parseHeaders()
 		addHeader(hline);
 		hline = getLine();
 	}
-
 	if (checkHeaderEnd())
 		return (Parsing(SUCESSES));
 	return (Parsing(REREAD));
 }
 
-void HTTPMessage::checkChunked()
+int HTTPMessage::checkChunked()
 {
-	if (headers->find("Transfer-Encoding") != headers->end()
-		&& (*headers)["Transfer-Encoding"] == "chunked")
+	if (getHeaderValue("Transfer-Encoding") != "")
 		this->isChunked = true;
 	else
-		this->isChunked = false;
+	{
+		std::string contentLen = getHeaderValue(("Content-Length"));
+		if (contentLen != "")
+		{
+			for (size_t i = 0; i < contentLen.length(); i++)
+				if (std::isdigit(contentLen[i]) != 0)
+					return (Status(BAD_REQUEST));
+			this->isChunked = false;
+		}
+		else
+			return (Status(BAD_REQUEST));
+	}
+	return (Parsing(SUCESSES));
+
 }
 
 bool HTTPMessage::parseBody()
 {
+	if (!(this->isChunked))
+		return (parseBody_contentLen());
+	else
+		return (parseBody_chunked());
+}
+
+int HTTPMessage::parseBody_contentLen()
+{
 	std::string hlenstr = "";
 	unsigned int contentLen = 0;
 	hlenstr = getHeaderValue("Content-Length");
-
-	if (hlenstr.empty())
-		return (true);
 	
 	contentLen = atoi(hlenstr.c_str());
 
-	// content length가 보낼 데이터보다 크다면 클라이언트 소켓이
-	// 남은 데이터가 더 있다고 판단하고 기다림 ->
-	// net::ERR_CONTENT_LENGTH_MISMATCH
 	if (contentLen > bytesRemaining() + 1)
-	{
-		std::stringstream pes;
-		pes << "Content-Length (" << hlenstr << ") is greater than remaining bytes (" << bytesRemaining() << ")";
-		this->parseErrorStr = pes.str();
-		return (false);
-	}
-	else
-		this->dataLen = contentLen;
-
+		return (Parsing(REREAD));
+	
+	this->dataLen = contentLen;
 	unsigned int dIdx = 0;
 	unsigned int s = size();
 	this->data = new byte[dataLen];
@@ -204,7 +203,66 @@ bool HTTPMessage::parseBody()
 		this->data[dIdx] = get(i);
 		dIdx++;
 	}
-	return (true);
+	erase(0, getReadPos());
+	return (Parsing(SUCESSES));
+}
+
+int HTTPMessage::parseBody_chunked()
+{
+	std::string line = "";
+	std::string body = "";
+	
+	while ((line = getLine()) != "")
+	{
+		// false : data size
+		if (!this->chunked_status)
+		{
+			if (line[0] == '0' && line[1] == 'x')
+				this->chunk_size = static_cast<int>(std::strtol(line.c_str(), NULL, 0));
+			else
+				this->chunk_size = static_cast<int>(std::strtol(line.c_str(), NULL, 16));
+			if (this->chunk_size == 0)
+			{
+				std::cout << "chunked body is done" << std::endl;
+				erase(0, getReadPos());
+				break;
+			}
+			erase(0, getReadPos());
+			this->chunked_status = true;
+		}
+		else
+		{
+			body += line;
+			erase(0, getReadPos());
+			//this->chunk_size = 0;
+			this->chunked_status = false;
+		}
+	}
+	
+	if (body != "")
+	{
+		if (!this->data)
+		{
+			this->data = new byte[body.length() + 1];
+			for (size_t i = 0; i < body.length(); i++)
+				this->data[i] = static_cast<byte>(body[i]);
+			this->data[body.length()] = '\0';
+		}
+		else
+		{
+			std::string temp(reinterpret_cast<char*>(this->data));
+			temp += body;
+			free(this->data);
+			this->data = new byte[temp.length() + 1];
+			for (size_t i = 0; i < temp.length(); i++)
+				this->data[i] = static_cast<byte>(temp[i]);
+			this->data[temp.length()] = '\0';
+		}
+	}
+
+	if (this->chunk_size == 0)
+		return (Parsing(SUCESSES));
+	return (Parsing(REREAD));
 }
 
 void HTTPMessage::addHeader(std::string line)

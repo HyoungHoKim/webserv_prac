@@ -75,6 +75,7 @@ Resource *ResourceHost::readDirectory(std::string path, struct stat sb)
 	if (!(sb.st_mode & S_IRWXU))
 		return (NULL);
 	
+	/*
 	std::string listing = generateDirList(path);
 
 	unsigned int slen = listing.length();
@@ -85,6 +86,7 @@ Resource *ResourceHost::readDirectory(std::string path, struct stat sb)
 	res = new Resource(path, true);
 	res->setMimeType("text/html");
 	res->setData((byte*)sdata, slen);
+	*/
 
 	return (res);
 }

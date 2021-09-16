@@ -181,20 +181,21 @@ void Server::run(void)
 					continue;
 				}
 
+				/*
 				if (curr_event->flags & EV_EOF)
 				{
 					std::cout << "flags EOF" << std::endl;
 					disconnected_client(clientMap[curr_event->ident]);
 					continue;
 				}
+				*/
 
 				if (curr_event->filter == EVFILT_READ)
 				{
-					if (readClient(clientMap[curr_event->ident], curr_event->data))
-					{
-						add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-						add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
-					}
+					readClient(clientMap[curr_event->ident], curr_event->data);
+					
+					add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+					add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}
 				else if (curr_event->filter == EVFILT_WRITE)
 				{
@@ -222,14 +223,16 @@ bool Server::readClient(Client *cl, int data_len)
 
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
-	cl->getRequset()->printData();
+	//std::cout << pData << std::endl;
+	//cl->getRequset()->printData();
+	//std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
+	//std::cout << "------------------------------" << std::endl;
 	delete[] pData;
-	std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
 	int status = cl->getRequset()->parse();
 
 	if (status == Status(BAD_REQUEST))
 	{
-		std::cout << "[" << cl->getClientIP() << "] There was an error processing thre request type: " 
+		std::cout << "[" << cl->getClientIP() << "] There was an error processing there request type: " 
 			<< cl->getRequset()->methodIntToStr(cl->getRequset()->getMethod()) << std::endl;
 		sendStatusResponse(cl, Status(BAD_REQUEST), cl->getRequset()->getParseError());
 		cl->deleteRequest();
@@ -259,7 +262,6 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	if (cl == NULL)
 		return (false);
 	
-	// std::cout << "avail_bytes: " << avail_bytes << std::endl;
  	int actual_sent = 0;
 	int attempt_sent = 0;
 	int remaining = 0;
@@ -319,9 +321,6 @@ bool Server::check_allowed_methods(HTTPRequest *req, int& idx)
 
 void Server::handleRequest(Client *cl, HTTPRequest *req)
 {
-	// std::cout << "[" << cl->getClientIP() << "] " << req->methodIntToStr(req->getMethod()) << " "
-	// 	<< req->getRequestUri() << std::endl;
-
 	std::vector<ServerConfig> dir_config = this->serv_config.getLocations();
 	int idx = 0;
 	for (size_t i = 0; i < dir_config.size(); i++)
@@ -376,8 +375,6 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 
 	if (r != NULL)
 	{
-		// std::cout << "[" << cl->getClientIP() << "]" << "Sending file: " << uri << std::endl;
-
 		HTTPResponse *resp = new HTTPResponse();
 		resp->setStatus(Status(OK));
 		resp->addHeader("Content-Type", r->getMimeType());
@@ -483,7 +480,7 @@ void Server::handlePut(Client *cl, HTTPRequest *req)
 	std::string connection_val = req->getHeaderValue("Connection");
 	if (connection_val.compare("close") == 0)
 		dc = true;
-
+	
 	sendResponse(cl, resp, dc);
 	delete resp;
 	delete r;
@@ -550,7 +547,7 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 	resp->addHeader("Content-Length", slen);
 	resp->setData((byte*)sdata, slen);
 
-	sendResponse(cl, resp, true);
+	sendResponse(cl, resp, false);
 
 	delete resp;
 }

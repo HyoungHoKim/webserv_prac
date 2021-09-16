@@ -68,6 +68,9 @@ protected:
 	byte* data;
 	unsigned int dataLen;
 	bool isChunked;
+	bool chunked_status; // false : data size, true : data
+	int chunk_size;
+
 	virtual void init();
 
 public:
@@ -90,7 +93,9 @@ public:
 	bool checkHeaderEnd();
 	int parseHeaders();
 	bool parseBody();
-	void checkChunked();
+	int checkChunked();
+	int parseBody_contentLen();
+	int parseBody_chunked();
 
 	void addHeader(std::string line);
 	void addHeader(std::string key, std::string value);

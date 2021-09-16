@@ -175,15 +175,15 @@ int HTTPRequest::parse()
 	if (!(this->isPreBodyDone))
 	{
 		setReadPos(0);
-		//std::cout << "StartLine Parsing Start" << std::endl;
 		status = parseStartLine();
-		//std::cout << "Header Parsing Start" << std::endl;
+		if (status == Status(BAD_REQUEST))
+			return (status);
 		status = parseHeaders();
+		if (status == Status(BAD_REQUEST))
+			return (status);
 		if (status == Parsing(SUCESSES))
 		{
-			//std::cout << "PreBody Parsing Done" << std::endl;
 			this->isPreBodyDone = true;
-			checkChunked();
 			erase(0, getReadPos());
 		}
 	}
@@ -191,7 +191,10 @@ int HTTPRequest::parse()
 		return (Parsing(REREAD));
 	if ((method != POST) && (method != PUT))
 		return (Parsing(SUCESSES));
-	if (!parseBody())
-		return (false);
-	return (true);
+	if (checkChunked() == Status(BAD_REQUEST))
+	{
+		clear();
+		return (Status(BAD_REQUEST));
+	}
+	return (parseBody());
 }
