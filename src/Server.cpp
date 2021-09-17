@@ -120,7 +120,7 @@ void Server::disconnected_client(Client *cl, bool mapErase)
 	close(cl->getSocket());
 	cl->deleteRequest();
 
-	if (mapErase)
+	if (mapErase) {}
 		clientMap.erase(cl->getSocket());
 
 	delete cl;
@@ -139,8 +139,8 @@ void Server::accept_new_client(void)
 
 	Client *cl = new Client(clnt_sock, clnt_addr);
 
-	this->add_kevent(clnt_sock, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	this->add_kevent(clnt_sock, EVFILT_WRITE, EV_ADD | EV_ENABLE, 0, 0, NULL);
+	this->add_kevent(clnt_sock, EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, NULL);
 	
 	clientMap.insert(std::pair<int, Client*>(clnt_sock, cl));
 
@@ -163,7 +163,8 @@ void Server::run(void)
 	struct kevent *curr_event;
 	while(1)
 	{
-		new_events = kevent(this->kq, NULL, 0, this->event_list, QSIZE, &(this->kqTimeout));
+		//new_events = kevent(this->kq, NULL, 0, this->event_list, QSIZE, &(this->kqTimeout));
+		new_events = kevent(this->kq, NULL, 0, this->event_list, QSIZE, 0);
 		
 		if (new_events <= 0)
 			continue;
@@ -197,16 +198,16 @@ void Server::run(void)
 						disconnected_client(clientMap[curr_event->ident]);
 					else
 					{
-						add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-						add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+						//add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+						//add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 					}
 				}
-				else if (curr_event->filter == EVFILT_WRITE)
+				if (curr_event->filter == EVFILT_WRITE)
 				{
 					if (!writeClient(clientMap[curr_event->ident], curr_event->data))
 					{
-						add_kevent(curr_event->ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
-						add_kevent(curr_event->ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+						//add_kevent(curr_event->ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
+						//add_kevent(curr_event->ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 					}
 				}
 			}
@@ -221,6 +222,8 @@ bool Server::readClient(Client *cl, int data_len)
 	
 	if (data_len <= 0)
 		data_len = 1400;
+	else
+		data_len++;
 	
 	char *pData = new char[data_len];
 	bzero(pData, data_len);

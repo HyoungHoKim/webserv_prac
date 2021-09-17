@@ -121,7 +121,10 @@ bool HTTPMessage::checkHeaderEnd()
 
 	setReadPos(getReadPos() - 2);
 	for (int i = 0; i < 2; i++)
+	{
 		flag += getChar();
+		std::cout << "End char : " << (int)flag[i] << std::endl;
+	}
 
 	if (flag[0] == 13 && flag[1] == 10)
 		return (true);
@@ -145,6 +148,7 @@ int HTTPMessage::parseHeaders()
 			return (Status(BAD_REQUEST));
 		}
 		addHeader(hline);
+		std::cout << hline;
 		erase(0, getReadPos());
 		hline = getLine();
 	}
@@ -158,7 +162,7 @@ int HTTPMessage::parseHeaders()
 
 int HTTPMessage::checkChunked()
 {
-	if (getHeaderValue("Transfer-Encoding") != "chunked")
+	if (getHeaderValue("Transfer-Encoding") == "chunked")
 		return (Parsing(CHUNK));
 	else
 	{
@@ -198,7 +202,8 @@ int HTTPMessage::parseBody_contentLen()
 	this->dataLen = contentLen;
 	unsigned int dIdx = 0;
 	unsigned int s = size();
-	this->data = new byte[dataLen];
+	this->data = new byte[dataLen + 1];
+	bzero(this->data, dataLen + 1);
 
 	for (unsigned int i = getReadPos(); i < s; i++)
 	{
@@ -246,6 +251,7 @@ int HTTPMessage::parseBody_chunked()
 		if (!this->data)
 		{
 			this->data = new byte[body.length() + 1];
+			bzero(this->data,  body.length()+ 1);
 			for (size_t i = 0; i < body.length(); i++)
 				this->data[i] = static_cast<byte>(body[i]);
 			this->data[body.length()] = '\0';
@@ -256,6 +262,7 @@ int HTTPMessage::parseBody_chunked()
 			temp += body;
 			free(this->data);
 			this->data = new byte[temp.length() + 1];
+			bzero(this->data, temp.length() + 1);
 			for (size_t i = 0; i < temp.length(); i++)
 				this->data[i] = static_cast<byte>(temp[i]);
 			this->data[temp.length()] = '\0';

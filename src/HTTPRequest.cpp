@@ -166,6 +166,7 @@ int HTTPRequest::parse()
 		status = parseStartLine();
 	if (status == Parsing(HEADERS))
 		status = parseHeaders();
+	std::cout << "after parseHeader parse : " << status << std::endl;
 	if ((method != POST) && (method != PUT))
 	{
 		if (status == Parsing(PREBODY))
@@ -173,6 +174,7 @@ int HTTPRequest::parse()
 	}
 	if (status == Parsing(PREBODY))
 		status = checkChunked();
+	std::cout << "after checkChunked parse : " << status << std::endl;
 	if (status == Parsing(BODY))
 		status = parseBody_contentLen();
 	if (status == Parsing(CHUNK))

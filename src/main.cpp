@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
 
 	if (servers.size() == 1)
 	{
+		std::cout << "server size 1 test" << std::endl;
 		Server server(servers[0]);
 
 		if (!server.init_Server())
