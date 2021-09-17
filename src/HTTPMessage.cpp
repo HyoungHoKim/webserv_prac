@@ -119,12 +119,11 @@ bool HTTPMessage::checkHeaderEnd()
 {
 	std::string flag = "";
 
-	setReadPos(getReadPos() - 4);
-	for (int i = 0; i < 4; i++)
+	setReadPos(getReadPos() - 2);
+	for (int i = 0; i < 2; i++)
 		flag += getChar();
 
-	if (flag[0] == 13 && flag[1] == 10 
-		&& flag[2] == 13 && flag[3] == 10)
+	if (flag[0] == 13 && flag[1] == 10)
 		return (true);
 	return (false);
 }
@@ -146,17 +145,21 @@ int HTTPMessage::parseHeaders()
 			return (Status(BAD_REQUEST));
 		}
 		addHeader(hline);
+		erase(0, getReadPos());
 		hline = getLine();
 	}
 	if (checkHeaderEnd())
-		return (Parsing(SUCESSES));
-	return (Parsing(REREAD));
+	{
+		std::cout << "header done" << std::endl;
+		return (Parsing(PREBODY));
+	}
+	return (Parsing(HEADERS));
 }
 
 int HTTPMessage::checkChunked()
 {
-	if (getHeaderValue("Transfer-Encoding") != "")
-		this->isChunked = true;
+	if (getHeaderValue("Transfer-Encoding") != "chunked")
+		return (Parsing(CHUNK));
 	else
 	{
 		std::string contentLen = getHeaderValue(("Content-Length"));
@@ -165,13 +168,12 @@ int HTTPMessage::checkChunked()
 			for (size_t i = 0; i < contentLen.length(); i++)
 				if (std::isdigit(contentLen[i]) != 0)
 					return (Status(BAD_REQUEST));
-			this->isChunked = false;
+			
+			return (Parsing(BODY));
 		}
 		else
 			return (Status(BAD_REQUEST));
 	}
-	return (Parsing(SUCESSES));
-
 }
 
 bool HTTPMessage::parseBody()
@@ -191,7 +193,7 @@ int HTTPMessage::parseBody_contentLen()
 	contentLen = atoi(hlenstr.c_str());
 
 	if (contentLen > bytesRemaining() + 1)
-		return (Parsing(REREAD));
+		return (Parsing(BODY));
 	
 	this->dataLen = contentLen;
 	unsigned int dIdx = 0;
@@ -204,7 +206,7 @@ int HTTPMessage::parseBody_contentLen()
 		dIdx++;
 	}
 	erase(0, getReadPos());
-	return (Parsing(SUCESSES));
+	return (Parsing(COMPLETE));
 }
 
 int HTTPMessage::parseBody_chunked()
@@ -261,8 +263,8 @@ int HTTPMessage::parseBody_chunked()
 	}
 
 	if (this->chunk_size == 0)
-		return (Parsing(SUCESSES));
-	return (Parsing(REREAD));
+		return (Parsing(COMPLETE));
+	return (Parsing(CHUNK));
 }
 
 void HTTPMessage::addHeader(std::string line)

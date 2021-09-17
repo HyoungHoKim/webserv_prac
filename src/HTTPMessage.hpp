@@ -51,8 +51,13 @@ enum Status
 
 enum Parsing
 {
-	SUCESSES,
-	REREAD
+	START_LINE,
+	HEADERS,
+	PREBODY,
+	CHUNK,
+	BODY,
+	COMPLETE,
+	ERROR
 };
 
 class HTTPMessage : public ByteBuffer

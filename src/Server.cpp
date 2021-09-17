@@ -191,20 +191,22 @@ void Server::run(void)
 				}
 				*/
 
-				if (curr_event->filter == EVFILT_WRITE)
+				if (curr_event->filter == EVFILT_READ)
+				{
+					if (!readClient(clientMap[curr_event->ident], curr_event->data))
+						disconnected_client(clientMap[curr_event->ident]);
+					else
+					{
+						add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+						add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+					}
+				}
+				else if (curr_event->filter == EVFILT_WRITE)
 				{
 					if (!writeClient(clientMap[curr_event->ident], curr_event->data))
 					{
 						add_kevent(curr_event->ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
 						add_kevent(curr_event->ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-					}
-				}
-				else if (curr_event->filter == EVFILT_READ)
-				{
-					if (readClient(clientMap[curr_event->ident], curr_event->data))
-					{
-						add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-						add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 					}
 				}
 			}
@@ -231,6 +233,10 @@ bool Server::readClient(Client *cl, int data_len)
 	std::cout << "------------------------------" << std::endl;
 	delete[] pData;
 	int status = cl->getRequset()->parse();
+	std::cout << "status : " << status << std::endl; 
+
+	if (lenRecv <= 0)
+		return (false);
 
 	if (status == Status(BAD_REQUEST))
 	{
@@ -240,22 +246,14 @@ bool Server::readClient(Client *cl, int data_len)
 		cl->deleteRequest();
 		return (true);
 	}
-	else if (status == Parsing(SUCESSES))
+	else if (status == Parsing(COMPLETE))
 	{
+		std::cout << "Parsing done! Request start" << std::endl;
 		handleRequest(cl, cl->getRequset());
 		cl->deleteRequest();
 		return (true);
 	}
-
-	if (lenRecv == 0)
-	{
-		std::cout << "[" << cl->getSocket() << "] has opted to close the connection" << std::endl;
-		disconnected_client(cl);
-	}
-	else if (lenRecv < 0)
-		disconnected_client(cl);
-	
-	return (false);
+	return (true);
 }
 
 bool Server::writeClient(Client *cl, int avail_bytes)
@@ -290,7 +288,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 		attempt_sent = avail_bytes;
 
 	actual_sent = send(cl->getSocket(), pData + (item->getOffset()), attempt_sent, 0);
-	std::cout << "send Data" << std::endl;
+	std::cout << pData << std::endl;
 	if (actual_sent >= 0)
 		item->setOffset(item->getOffset() + actual_sent);
 	else

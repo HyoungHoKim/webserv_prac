@@ -52,31 +52,31 @@ void HTTPResponse::determineReasonStr()
 	switch (status)
 	{
 	case Status(CONTINUE):
-		reason = "Continue";
+		reason = "Continue\0";
 		break;
 	case Status(OK):
-		reason = "OK";
+		reason = "OK\0";
 		break;
 	case Status(CREATE):
-		reason = "Create";
+		reason = "Create\0";
 		break;
 	case Status(NO_CONTENT):
-		reason = "No Content";
+		reason = "No Content\0";
 		break;
 	case Status(BAD_REQUEST):
-		reason = "Bad Request";
+		reason = "Bad Request\0";
 		break;
 	case Status(NOT_FOUND):
-		reason = "Not Found";
+		reason = "Not Found\0";
 		break;
 	case Status(METHOD_NOT_ALLOW):
-		reason = "Method Not Allowed";
+		reason = "Method Not Allowed\0";
 		break;
 	case Status(SERVER_ERROR):
-		reason = "Internal Server Error";
+		reason = "Internal Server Error\0";
 		break;
 	case Status(NOT_IMPLEMENTED):
-		reason = "Not Implemented";
+		reason = "Not Implemented\0";
 		break;
 	default:
 		break;

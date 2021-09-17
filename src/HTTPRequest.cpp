@@ -23,8 +23,7 @@ HTTPRequest::~HTTPRequest()
 
 void HTTPRequest::init()
 {
-	this->isPreBodyDone = false;
-	this->isError = false;
+	this->status = Parsing(START_LINE);
 	this->method = 0;
 	this->requestUri = "";
 	this->config_dir = "";
@@ -154,54 +153,29 @@ int HTTPRequest::parseStartLine()
 		this->version = startLine;
 		if (this->version != "HTTP/1.1")
 			return (Status(BAD_REQUEST));
-		return (Parsing(SUCESSES));
+		erase(0, getReadPos());
+		return (Parsing(HEADERS));
 	}
 	else
-		return (Parsing(REREAD));
+		return (Parsing(START_LINE));
 }
 
 int HTTPRequest::parse()
 {
-	int status = 0;
-
-	if (this->isError)
-		return (Parsing(REREAD));
-
-	if (!(this->isPreBodyDone))
-	{
-		setReadPos(0);
+	if (status == Parsing(START_LINE))
 		status = parseStartLine();
-		if (status == Status(BAD_REQUEST))
-		{
-			this->isError = true;
-			return (status);
-		}
+	if (status == Parsing(HEADERS))
 		status = parseHeaders();
-		if (status == Status(BAD_REQUEST))
-		{
-			this->isError = true;
-			return (status);
-		}
-		if (status == Parsing(SUCESSES))
-		{
-			this->isPreBodyDone = true;
-			erase(0, getReadPos());
-		}
-	}
-	if (!(this->isPreBodyDone))
-		return (Parsing(REREAD));
 	if ((method != POST) && (method != PUT))
-		return (Parsing(SUCESSES));
-	if (checkChunked() == Status(BAD_REQUEST))
 	{
-		this->isError = true;
-		return (Status(BAD_REQUEST));
+		if (status == Parsing(PREBODY))
+			status = Parsing(COMPLETE);
 	}
-	status = parseBody();
-	if (status == Status(BAD_REQUEST)) 
-	{
-		this->isError = true;
-		return (BAD_REQUEST);
-	}
+	if (status == Parsing(PREBODY))
+		status = checkChunked();
+	if (status == Parsing(BODY))
+		status = parseBody_contentLen();
+	if (status == Parsing(CHUNK))
+		status = parseBody_chunked();
 	return (status);
 }
