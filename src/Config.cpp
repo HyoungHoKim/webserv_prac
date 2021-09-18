@@ -55,6 +55,8 @@ void				Config::tokenize(std::string &buffer)
 		line = ft::getline(buffer);
 		while ((first = line.find_first_not_of(" \t", last)) != std::string::npos)
 		{
+			if (line[first] == '#')
+				break ;
 			last = line.find_first_of(" \t", first);
 			if (last == std::string::npos)
 				last = line.size();
@@ -78,6 +80,11 @@ void				Config::tokenize(std::string &buffer)
 				tokens.push_back(temp);
 		}
 	}
+}
+
+const char* Config::errorInConfig::what() const throw()
+{
+	return ("error in config");
 }
 
 std::vector<ServerConfig> Config::getServers() const
