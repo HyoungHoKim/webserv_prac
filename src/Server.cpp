@@ -196,18 +196,16 @@ void Server::run(void)
 				{
 					if (!readClient(clientMap[curr_event->ident], curr_event->data))
 						disconnected_client(clientMap[curr_event->ident]);
-					else
-					{
-						//add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-						//add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
-					}
+					
+					add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
+					add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
 				}
 				if (curr_event->filter == EVFILT_WRITE)
 				{
 					if (!writeClient(clientMap[curr_event->ident], curr_event->data))
 					{
-						//add_kevent(curr_event->ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
-						//add_kevent(curr_event->ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
+						add_kevent(curr_event->ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
+						add_kevent(curr_event->ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
 					}
 				}
 			}
@@ -217,6 +215,7 @@ void Server::run(void)
 
 bool Server::readClient(Client *cl, int data_len)
 {
+	std::cout << "Read Client" << std::endl;
 	if (cl == NULL)
 		return (false);
 	
@@ -230,8 +229,8 @@ bool Server::readClient(Client *cl, int data_len)
 
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
-	std::cout << pData << std::endl;
-	cl->getRequset()->printData();
+	//std::cout << pData << std::endl;
+	//cl->getRequset()->printData();
 	std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
 	std::cout << "------------------------------" << std::endl;
 	delete[] pData;
@@ -261,7 +260,8 @@ bool Server::readClient(Client *cl, int data_len)
 
 bool Server::writeClient(Client *cl, int avail_bytes)
 {
-	if (cl == NULL)
+	std::cout << "Write Client" << std::endl;
+	if (cl == NULL) 
 		return (false);
 	
  	int actual_sent = 0;
@@ -283,7 +283,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
 
-	// std::cout << "------ Body ----- \n" << pData << std::endl;
+	std::cout << "---------- Response Body ----------" << std::endl;
 
 	if (avail_bytes >= remaining)
 		attempt_sent = remaining;
@@ -297,7 +297,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	else
 		disconnect = true;
 
-	// std::cout << "[" << cl->getClientIP() << "] was sent " << actual_sent << " bytes " << std::endl;
+	std::cout << "----------------------------------" << std::endl;
 
 	if (item->getOffset() >= item->getSize())
 		cl->dequeueFromSendQueue();

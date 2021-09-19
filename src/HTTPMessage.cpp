@@ -33,7 +33,7 @@ void HTTPMessage::init()
 	this->dataLen = 0;
 	this->isChunked = false;
 	this->chunked_status = false;
-	this->chunk_size = 0;
+	this->chunk_size = -1;
 
 	this->version = DEFAULT_HPP_VERSION;
 
@@ -148,7 +148,6 @@ int HTTPMessage::parseHeaders()
 			return (Status(BAD_REQUEST));
 		}
 		addHeader(hline);
-		std::cout << hline;
 		erase(0, getReadPos());
 		hline = getLine();
 	}
@@ -170,13 +169,21 @@ int HTTPMessage::checkChunked()
 		if (contentLen != "")
 		{
 			for (size_t i = 0; i < contentLen.length(); i++)
+			{
 				if (std::isdigit(contentLen[i]) != 0)
+				{
+					std::cout << "ContentLength is not digit!!!" << std::endl;
 					return (Status(BAD_REQUEST));
+				}
+			}
 			
 			return (Parsing(BODY));
 		}
 		else
+		{
+			std::cout << "CHUNK and Content-Length is not exist!!!" << std::endl;
 			return (Status(BAD_REQUEST));
+		}
 	}
 }
 

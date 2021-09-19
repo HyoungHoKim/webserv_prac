@@ -24,7 +24,7 @@ HTTPRequest::~HTTPRequest()
 void HTTPRequest::init()
 {
 	this->status = Parsing(START_LINE);
-	this->method = 0;
+	this->method = -1;
 	this->requestUri = "";
 	this->config_dir = "";
 }
@@ -84,6 +84,7 @@ bool HTTPRequest::checkMethod(std::string& startLine)
 	int spacePos = startLine.find(' ');
 
 	methodName = startLine.substr(0, spacePos);
+	std::cout << "methodName : " << methodName << std::endl;
 	startLine = startLine.substr(spacePos + 1);
 
 	if (methodName == "")
@@ -147,12 +148,22 @@ int HTTPRequest::parseStartLine()
 	if (startLine != "")
 	{
 		if (!checkMethod(startLine))
+		{
+			std::cout << "Method Error!!! : " << this->method << std::endl;
+			
 			return (Status(BAD_REQUEST));
+		}
 		if (!checkUri(startLine))
+		{
+			std::cout << "Uri Error!!! : " << this->requestUri << std::endl;
 			return (Status(BAD_REQUEST));
+		}
 		this->version = startLine;
 		if (this->version != "HTTP/1.1")
+		{
+			std::cout << "Version Error!!! : " << this->version << std::endl;
 			return (Status(BAD_REQUEST));
+		}
 		erase(0, getReadPos());
 		return (Parsing(HEADERS));
 	}
@@ -179,5 +190,6 @@ int HTTPRequest::parse()
 		status = parseBody_contentLen();
 	if (status == Parsing(CHUNK))
 		status = parseBody_chunked();
+	std::cout << "after Body parse : " << status << std::endl;
 	return (status);
 }
