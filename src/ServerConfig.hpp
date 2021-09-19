@@ -48,7 +48,7 @@ class	ServerConfig
 		void		parseServerName(std::vector<std::string>::iterator &it);
 		void		parseClientMaxBodySize(std::vector<std::string>::iterator &it);
 		void		loopLocation(std::vector<std::string>::iterator &it, std::vector<ServerConfig> &locations);
-		class	errorInConfig
+		class	errorInConfig : public std::exception
 		{
 			public:
 				virtual const char* what() const throw();

@@ -25,7 +25,10 @@ bool	ServerConfig::isValidDirective(std::string temp)
 void	ServerConfig::initServer(std::vector<std::string>::iterator &it)
 {
 	if (*it != "{")
+	{
+		std::cout << "3" << std::endl;
 		throw errorInConfig();
+	}
 	while (*(++it) != "}")
 	{
 		if (isValidDirective(*it))
