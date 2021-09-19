@@ -14,6 +14,8 @@ std::string			Config::readFile(char *file)
 	std::string		buffer;
 	std::ifstream	fin(file);
 
+	if (!fin.is_open())
+		throw errorInConfig();
 	while (fin.get(c))
 		buffer += c;
 	fin.close();
