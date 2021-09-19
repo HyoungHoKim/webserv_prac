@@ -24,8 +24,8 @@ bool	ServerConfig::isValidDirective(std::string temp)
 
 void	ServerConfig::initServer(std::vector<std::string>::iterator &it)
 {
-	// if (*it != "{")
-		//error
+	if (*it != "{")
+		throw errorInConfig();
 	while (*(++it) != "}")
 	{
 		if (isValidDirective(*it))
@@ -185,4 +185,9 @@ size_t	ServerConfig::getClientMaxBodySize() const
 void	ServerConfig::setID(int _id)
 {
 	this->id = _id;
+}
+
+const char* ServerConfig::errorInConfig::what() const throw()
+{
+	return ("Error in Config");
 }

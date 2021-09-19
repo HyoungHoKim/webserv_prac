@@ -55,6 +55,8 @@ void				Config::tokenize(std::string &buffer)
 		line = ft::getline(buffer);
 		while ((first = line.find_first_not_of(" \t", last)) != std::string::npos)
 		{
+			if (line[first] == '#')
+				break ;
 			last = line.find_first_of(" \t", first);
 			if (last == std::string::npos)
 				last = line.size();
@@ -64,10 +66,12 @@ void				Config::tokenize(std::string &buffer)
 			else if (temp == "}")
 			{
 				if (brace.empty())
-					return ;
+					throw Config::errorInConfig();
 				else
 					brace.pop_back();
 			}
+			if (isValidDirective(temp) && line[line.find_last_not_of(" \t", line.length())] != ';')
+				throw Config::errorInConfig();
 			if (temp.find(';', temp.length() - 1) != std::string::npos)
 			{
 				temp.erase(temp.length() - 1);
@@ -78,6 +82,25 @@ void				Config::tokenize(std::string &buffer)
 				tokens.push_back(temp);
 		}
 	}
+}
+
+bool	Config::isValidDirective(std::string temp)
+{
+	if (!temp.compare("listen") ||
+		!temp.compare("location") ||
+		!temp.compare("root") ||
+		!temp.compare("methods") ||
+		!temp.compare("index") ||
+		!temp.compare("server_name") ||
+		!temp.compare("client_max_body_size"))
+		return (true);
+	else
+		return (false);
+}
+
+const char* Config::errorInConfig::what() const throw()
+{
+	return ("error in config");
 }
 
 std::vector<ServerConfig> Config::getServers() const

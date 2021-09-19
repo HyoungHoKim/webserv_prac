@@ -18,6 +18,12 @@ class Config
 
 		void	tokenize(std::string &buffer);
 		void	parseConfig(char *file);
+		bool	isValidDirective(std::string temp);
 		std::vector<ServerConfig> getServers() const;
+		class	errorInConfig : public std::exception
+		{
+			public:
+				virtual const char* what() const throw();
+		};
 };
 #endif

@@ -4,6 +4,7 @@
 # include <fstream>
 # include <string>
 # include <map>
+# include <exception>
 # include <vector>
 # include "libft.hpp"
 
@@ -47,6 +48,11 @@ class	ServerConfig
 		void		parseServerName(std::vector<std::string>::iterator &it);
 		void		parseClientMaxBodySize(std::vector<std::string>::iterator &it);
 		void		loopLocation(std::vector<std::string>::iterator &it, std::vector<ServerConfig> &locations);
+		class	errorInConfig
+		{
+			public:
+				virtual const char* what() const throw();
+		};
 };
 #endif
 

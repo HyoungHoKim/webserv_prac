@@ -278,7 +278,6 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	SendQueueItem *item = cl->nextInSendQueue();
 	if (item == NULL)
 		return (false);
-	
 	pData = item->getData();
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
