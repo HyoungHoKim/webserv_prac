@@ -230,7 +230,7 @@ bool Server::readClient(Client *cl, int data_len)
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
 	//std::cout << pData << std::endl;
-	//cl->getRequset()->printData();
+	cl->getRequset()->printData();
 	std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
 	std::cout << "------------------------------" << std::endl;
 	delete[] pData;
