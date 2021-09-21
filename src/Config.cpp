@@ -14,6 +14,8 @@ std::string			Config::readFile(char *file)
 	std::string		buffer;
 	std::ifstream	fin(file);
 
+	if (!fin.is_open())
+		throw errorInConfig();
 	while (fin.get(c))
 		buffer += c;
 	fin.close();
@@ -66,12 +68,18 @@ void				Config::tokenize(std::string &buffer)
 			else if (temp == "}")
 			{
 				if (brace.empty())
+				{
+					std::cout << "1" << std::endl;
 					throw Config::errorInConfig();
+				}
 				else
 					brace.pop_back();
 			}
 			if (isValidDirective(temp) && line[line.find_last_not_of(" \t", line.length())] != ';')
-				throw Config::errorInConfig();
+			{
+				if (temp.compare("location"))
+					throw Config::errorInConfig();
+			}
 			if (temp.find(';', temp.length() - 1) != std::string::npos)
 			{
 				temp.erase(temp.length() - 1);

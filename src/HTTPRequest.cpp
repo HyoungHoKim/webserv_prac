@@ -150,7 +150,6 @@ int HTTPRequest::parseStartLine()
 		if (!checkMethod(startLine))
 		{
 			std::cout << "Method Error!!! : " << this->method << std::endl;
-			
 			return (Status(BAD_REQUEST));
 		}
 		if (!checkUri(startLine))
