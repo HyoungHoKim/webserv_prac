@@ -151,10 +151,25 @@ public:
 	{
 		if (size() == 0)
 			return ;
-		std::cout << "-------- read Request --------" << std::endl;
-		for (int i = 0; i < (int)size(); i++)
-			std::cout << buf[i];
-		std::cout << "\n------------------------------" << std::endl;
+
+		int printLen = (int)size();
+		if (printLen > 1000)
+		{
+			std::cout << "-------- read Request --------" << std::endl;
+			for (int i = 0; i < 100; i++)
+				std::cout << buf[i];
+			std::cout << "\n...." << std::endl;
+			for (int i = printLen - 100; i < printLen; i++)
+				std::cout << buf[i];
+			std::cout << "\n------------------------------" << std::endl;
+		}
+		else
+		{
+			std::cout << "-------- read Request --------" << std::endl;
+			for (int i = 0; i < printLen; i++)
+				std::cout << buf[i];
+			std::cout << "\n------------------------------" << std::endl;
+		}
 	}
 };
 

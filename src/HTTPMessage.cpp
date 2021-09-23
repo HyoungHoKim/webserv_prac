@@ -237,21 +237,12 @@ int HTTPMessage::parseBody_chunked()
 			else
 				this->chunk_size = static_cast<int>(std::strtol(line.c_str(), NULL, 16));
 			erase(0, getReadPos());
-			if (this->chunk_size == 0)
-			{
-				if (checkHeaderEnd())
-				{
-					erase(0, getReadPos());
-					return (Parsing(COMPLETE));
-				}
-			}
 			this->chunked_status = true;
 		}
 		else
 		{
 			body += line;
 			erase(0, getReadPos());
-			this->chunk_size = 0;
 			this->chunked_status = false;
 		}
 	}

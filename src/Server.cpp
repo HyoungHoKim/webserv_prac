@@ -217,7 +217,7 @@ void Server::run(void)
 
 bool Server::readClient(Client *cl, int data_len)
 {
-	//std::cout << "Read Client" << std::endl;
+	std::cout << "Read Client" << std::endl;
 	if (cl == NULL)
 		return (false);
 	
@@ -229,10 +229,30 @@ bool Server::readClient(Client *cl, int data_len)
 	char *pData = new char[data_len];
 	bzero(pData, data_len);
 
+	std::cout << "readClient test" << std::endl;
+
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
-	std::cout << pData << std::endl;
-	std::cout << ">> readClient ";
+
+	int printLen = (int)lenRecv;
+	if (printLen > 1000)
+	{
+		std::cout << "-------- receive Request --------" << std::endl;
+		for (int i = 0; i < 100; i++)
+			std::cout << pData[i];
+		std::cout << "...." << std::endl;
+		for (int i = printLen - 100; i < printLen; i++)
+			std::cout << pData[i];
+		std::cout << "\n------------------------------" << std::endl;
+	}
+	else
+	{
+		std::cout << "-------- receive Request --------" << std::endl;
+		std::cout << pData << std::endl;
+		std::cout << "\n------------------------------" << std::endl;
+	}
+
+	std::cout << ">> readClient \n";
 	cl->getRequset()->printData();
 	//std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
 	//std::cout << "------------------------------" << std::endl;
@@ -265,9 +285,12 @@ bool Server::readClient(Client *cl, int data_len)
 
 bool Server::writeClient(Client *cl, int avail_bytes)
 {
-	//std::cout << "Write Client" << std::endl;
-	if (cl == NULL) 
+	std::cout << "Write Client" << std::endl;
+	if (cl == NULL)
+	{
+		std::cout << "None message to send Client" << std::endl;
 		return (false);
+	}
 	
  	int actual_sent = 0;
 	int attempt_sent = 0;
@@ -471,7 +494,6 @@ void Server::handlePut(Client *cl, HTTPRequest *req)
 	}
 	else
 		path = r->getLocation();
-
 	std::ofstream fout(path);
 	fout << req->getData();
 
