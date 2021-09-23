@@ -154,6 +154,7 @@ int HTTPMessage::parseHeaders()
 	if (checkHeaderEnd())
 	{
 		std::cout << "header done" << std::endl;
+		erase(0, getReadPos());
 		return (Parsing(PREBODY));
 	}
 	return (Parsing(HEADERS));
@@ -226,7 +227,7 @@ int HTTPMessage::parseBody_chunked()
 	std::string line = "";
 	std::string body = "";
 	
-	while ((line = getLine()) != "")
+	while ((line = getLine()) != "" && this->chunk_size != 0)
 	{
 		// false : data size
 		if (!this->chunked_status)
@@ -235,13 +236,15 @@ int HTTPMessage::parseBody_chunked()
 				this->chunk_size = static_cast<int>(std::strtol(line.c_str(), NULL, 0));
 			else
 				this->chunk_size = static_cast<int>(std::strtol(line.c_str(), NULL, 16));
+			erase(0, getReadPos());
 			if (this->chunk_size == 0)
 			{
-				std::cout << "chunked body is done" << std::endl;
-				erase(0, getReadPos());
-				break;
+				if (checkHeaderEnd())
+				{
+					erase(0, getReadPos());
+					return (Parsing(COMPLETE));
+				}
 			}
-			erase(0, getReadPos());
 			this->chunked_status = true;
 		}
 		else
@@ -277,7 +280,15 @@ int HTTPMessage::parseBody_chunked()
 	}
 
 	if (this->chunk_size == 0)
-		return (Parsing(COMPLETE));
+	{
+		std::cout << ">> after while" << std::endl;
+		printData();
+		if (checkHeaderEnd())
+		{
+			erase(0, getReadPos());
+			return (Parsing(COMPLETE));
+		}
+	}
 	return (Parsing(CHUNK));
 }
 

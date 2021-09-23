@@ -84,7 +84,7 @@ bool HTTPRequest::checkMethod(std::string& startLine)
 	int spacePos = startLine.find(' ');
 
 	methodName = startLine.substr(0, spacePos);
-	std::cout << "methodName : " << methodName << std::endl;
+	//std::cout << "methodName : " << methodName << std::endl;
 	startLine = startLine.substr(spacePos + 1);
 
 	if (methodName == "")
@@ -149,7 +149,7 @@ int HTTPRequest::parseStartLine()
 	{
 		if (!checkMethod(startLine))
 		{
-			std::cout << "Method Error!!! : " << this->method << std::endl;
+			//std::cout << "Method Error!!! : " << this->method << std::endl;
 			return (Status(BAD_REQUEST));
 		}
 		if (!checkUri(startLine))

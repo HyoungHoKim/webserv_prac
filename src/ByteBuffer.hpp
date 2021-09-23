@@ -149,6 +149,8 @@ public:
 
 	void printData()
 	{
+		if (size() == 0)
+			return ;
 		std::cout << "-------- read Request --------" << std::endl;
 		for (int i = 0; i < (int)size(); i++)
 			std::cout << buf[i];

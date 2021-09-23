@@ -60,6 +60,8 @@ bool Server::init_Server(void)
 	this->serv_adr.sin_port = htons(this->serv_port);
 
 	fcntl(this->serv_sock, F_SETFL, O_NONBLOCK);
+	int optvalue = 1;
+	setsockopt(this->serv_sock, SOL_SOCKET, SO_REUSEADDR, &optvalue, sizeof(optvalue));
 
 	if (bind(this->serv_sock, (struct sockaddr *)&(this->serv_adr), sizeof(this->serv_adr)) == -1)
 		return (exit_with_perror("bind() error!!!"));
@@ -120,7 +122,7 @@ void Server::disconnected_client(Client *cl, bool mapErase)
 	close(cl->getSocket());
 	cl->deleteRequest();
 
-	if (mapErase) {}
+	if (mapErase)
 		clientMap.erase(cl->getSocket());
 
 	delete cl;
@@ -215,7 +217,7 @@ void Server::run(void)
 
 bool Server::readClient(Client *cl, int data_len)
 {
-	std::cout << "Read Client" << std::endl;
+	//std::cout << "Read Client" << std::endl;
 	if (cl == NULL)
 		return (false);
 	
@@ -229,10 +231,11 @@ bool Server::readClient(Client *cl, int data_len)
 
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
-	//std::cout << pData << std::endl;
+	std::cout << pData << std::endl;
+	std::cout << ">> readClient ";
 	cl->getRequset()->printData();
-	std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
-	std::cout << "------------------------------" << std::endl;
+	//std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
+	//std::cout << "------------------------------" << std::endl;
 	delete[] pData;
 	int status = cl->getRequset()->parse();
 	std::cout << "status : " << status << std::endl; 
@@ -252,6 +255,8 @@ bool Server::readClient(Client *cl, int data_len)
 	{
 		std::cout << "Parsing done! Request start" << std::endl;
 		handleRequest(cl, cl->getRequset());
+		std::cout << ">> After Handle Request " << std::endl;
+		cl->getRequset()->printData();
 		cl->deleteRequest();
 		return (true);
 	}
@@ -260,7 +265,7 @@ bool Server::readClient(Client *cl, int data_len)
 
 bool Server::writeClient(Client *cl, int avail_bytes)
 {
-	std::cout << "Write Client" << std::endl;
+	//std::cout << "Write Client" << std::endl;
 	if (cl == NULL) 
 		return (false);
 	
@@ -282,7 +287,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
 
-	std::cout << "---------- Response Body ----------" << std::endl;
+	std::cout << "---------- Response Message ----------" << std::endl;
 
 	if (avail_bytes >= remaining)
 		attempt_sent = remaining;
@@ -293,19 +298,15 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	std::cout << pData << std::endl;
 	if (actual_sent >= 0)
 		item->setOffset(item->getOffset() + actual_sent);
-	else
-		disconnect = true;
 
 	std::cout << "----------------------------------" << std::endl;
 
 	if (item->getOffset() >= item->getSize())
 		cl->dequeueFromSendQueue();
 	
-	if (disconnect)
-	{
+	if (disconnect || actual_sent <= 0)
 		disconnected_client(cl);
-		return (false);
-	}
+	
 	return (true);
 }
 
@@ -547,7 +548,8 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 
 	resp->addHeader("Content-Type", "text/plain");
 	resp->addHeader("Content-Length", slen);
-	resp->setData((byte*)sdata, slen);
+	if (cl->getRequset()->getMethod() != Method(HEAD))
+		resp->setData((byte*)sdata, slen);
 
 	sendResponse(cl, resp, false);
 
