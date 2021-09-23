@@ -58,7 +58,7 @@ void HTTPResponse::determineReasonStr()
 		reason = "OK\0";
 		break;
 	case Status(CREATE):
-		reason = "Create\0";
+		reason = "Created\0";
 		break;
 	case Status(NO_CONTENT):
 		reason = "No Content\0";

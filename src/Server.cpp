@@ -184,15 +184,13 @@ void Server::run(void)
 					std::cout << "Could not find client" << std::endl;
 					continue;
 				}
-
-				/*
+				
 				if (curr_event->flags & EV_EOF)
 				{
 					std::cout << "flags EOF" << std::endl;
 					disconnected_client(clientMap[curr_event->ident]);
 					continue;
 				}
-				*/
 
 				if (curr_event->filter == EVFILT_READ)
 				{
@@ -228,8 +226,6 @@ bool Server::readClient(Client *cl, int data_len)
 	
 	char *pData = new char[data_len];
 	bzero(pData, data_len);
-
-	std::cout << "readClient test" << std::endl;
 
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
@@ -287,10 +283,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 {
 	std::cout << "Write Client" << std::endl;
 	if (cl == NULL)
-	{
-		std::cout << "None message to send Client" << std::endl;
 		return (false);
-	}
 	
  	int actual_sent = 0;
 	int attempt_sent = 0;
@@ -306,6 +299,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	SendQueueItem *item = cl->nextInSendQueue();
 	if (item == NULL)
 		return (false);
+	std::cout << "writeClient test" << std::endl;
 	pData = item->getData();
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
@@ -318,7 +312,10 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 		attempt_sent = avail_bytes;
 
 	actual_sent = send(cl->getSocket(), pData + (item->getOffset()), attempt_sent, 0);
-	std::cout << pData << std::endl;
+	if (actual_sent >= 0)
+		std::cout << pData << std::endl;
+	else
+		std::cout << "send DataLen : " << actual_sent << std::endl;
 	if (actual_sent >= 0)
 		item->setOffset(item->getOffset() + actual_sent);
 
@@ -491,6 +488,7 @@ void Server::handlePut(Client *cl, HTTPRequest *req)
 	{
 		path = resHost->getBaseDiskPath() + uri;
 		status = Status(CREATE);
+		
 	}
 	else
 		path = r->getLocation();
@@ -500,6 +498,8 @@ void Server::handlePut(Client *cl, HTTPRequest *req)
 	HTTPResponse *resp = new HTTPResponse();
 	resp->setStatus(status);
 	resp->addHeader("Location", path);
+	if (!r)
+		resp->addHeader("Content-Length", "0");
 	
 	bool dc = false;
 	std::string connection_val = req->getHeaderValue("Connection");
