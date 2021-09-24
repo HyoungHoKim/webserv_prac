@@ -61,26 +61,27 @@ void	ServerConfig::getDirective(std::vector<std::string>::iterator &it)
 		this->parseAutoindex(++it);
 	else if (!temp.compare("CGI"))
 		this->parseCGI(++it);
-	else if (!temp.compare("exec"))
-		this->parseExec(++it);
+	// else if (!temp.compare("exec"))
+	// 	this->parseExec(++it);
 }
 
 void	ServerConfig::parseCGI(std::vector<std::string>::iterator &it)
 {
+	std::cout << "here :" << *it << std::endl;
 	this->cgi_ext = *it++;
-	if (*it == ";")
-		it++;
-	else
-		throw errorInConfig();
+	// if (*it == ";")
+	// 	it++;
+	// else
+	// 	throw errorInConfig();
 }
 
 void	ServerConfig::parseExec(std::vector<std::string>::iterator &it)
 {
 	this->exec = *it++;
-	if (*it == ";")
-		it++;
-	else
-		throw errorInConfig();
+	// if (*it == ";")
+	// 	it++;
+	// else
+	// 	throw errorInConfig();
 }
 
 void	ServerConfig::parseAutoindex(std::vector<std::string>::iterator &it)
@@ -89,10 +90,10 @@ void	ServerConfig::parseAutoindex(std::vector<std::string>::iterator &it)
 		autoindex = false;
 	else if (*it == "on")
 		autoindex = true;
-	if (*it == ";")
-		it++;
-	else
-		throw errorInConfig();
+	// if (*it == ";")
+	// 	it++;
+	// else
+	// 	throw errorInConfig();
 }
 
 void	ServerConfig::parseListen(std::vector<std::string>::iterator &it)
