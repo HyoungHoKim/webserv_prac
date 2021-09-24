@@ -20,6 +20,7 @@ bool	ServerConfig::isValidDirective(std::string temp)
 		!temp.compare("client_max_body_size") ||
 		!temp.compare("CGI") ||
 		!temp.compare("exec") ||
+		!temp.compare("error") ||
 		!temp.compare("autoindex"))
 		return (true);
 	else
@@ -32,7 +33,6 @@ void	ServerConfig::initServer(std::vector<std::string>::iterator &it)
 		throw errorInConfig();
 	while (*(++it) != "}")
 	{
-		std::cout << *it << std::endl;
 		if (isValidDirective(*it))
 			getDirective(it);
 	}
@@ -61,13 +61,19 @@ void	ServerConfig::getDirective(std::vector<std::string>::iterator &it)
 		this->parseAutoindex(++it);
 	else if (!temp.compare("CGI"))
 		this->parseCGI(++it);
-	// else if (!temp.compare("exec"))
-	// 	this->parseExec(++it);
+	else if (!temp.compare("exec"))
+		this->parseExec(++it);
+	else if (!temp.compare("error"))
+		this->parseError(++it);
+}
+
+void	ServerConfig::parseError(std::vector<std::string>::iterator &it)
+{
+	this->error = *it++;
 }
 
 void	ServerConfig::parseCGI(std::vector<std::string>::iterator &it)
 {
-	std::cout << "here :" << *it << std::endl;
 	this->cgi_ext = *it++;
 	// if (*it == ";")
 	// 	it++;
