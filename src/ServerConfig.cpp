@@ -10,7 +10,6 @@ ServerConfig::~ServerConfig()
 
 bool	ServerConfig::isValidDirective(std::string temp)
 {
-	std::cout << temp << std::endl;
 	if (!temp.compare("listen") ||
 		!temp.compare("location") ||
 		!temp.compare("root") ||
@@ -32,7 +31,6 @@ void	ServerConfig::initServer(std::vector<std::string>::iterator &it)
 		throw errorInConfig();
 	while (*(++it) != "}")
 	{
-		std::cout << *it << std::endl;
 		if (isValidDirective(*it))
 			getDirective(it);
 	}
@@ -67,7 +65,6 @@ void	ServerConfig::getDirective(std::vector<std::string>::iterator &it)
 
 void	ServerConfig::parseCGI(std::vector<std::string>::iterator &it)
 {
-	std::cout << "here :" << *it << std::endl;
 	this->cgi_ext = *it++;
 	// if (*it == ";")
 	// 	it++;

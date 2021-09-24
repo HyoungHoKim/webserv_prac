@@ -359,7 +359,8 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	if (this->resHost)
 		delete this->resHost;
 	std::vector<std::string> config_index = this->serv_config.getLocations()[idx].getIndex();
-	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot(), config_index);
+	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot(),
+		this->serv_config.getLocations()[idx].getAutoindex(), config_index);
 
 	if (!check_allowed_methods(req, idx))
 	{
