@@ -346,13 +346,10 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 {
 	std::vector<ServerConfig> dir_config = this->serv_config.getLocations();
 	int idx = 0;
-	for (size_t i = 0; i < dir_config.size(); i++)
+	for (idx = 0; idx < static_cast<int>(dir_config.size()); idx++)
 	{
-		if (req->getConfig_dir() == dir_config[i].getUri())
-		{
-			idx = i;
+		if (req->getConfig_dir() == dir_config[idx].getUri())
 			break ;
-		}
 	}
 	if (static_cast<size_t>(idx) == dir_config.size())
 	{
@@ -394,6 +391,7 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 {
 	std::cout << "GET or HEAD" << " Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
+	std::cout << uri << std::endl;
 	Resource *r = resHost->getResource(uri);
 
 	if (r != NULL)
@@ -488,7 +486,6 @@ void Server::handlePut(Client *cl, HTTPRequest *req)
 	{
 		path = resHost->getBaseDiskPath() + uri;
 		status = Status(CREATE);
-		
 	}
 	else
 		path = r->getLocation();
@@ -558,10 +555,23 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 {
 	HTTPResponse *resp = new HTTPResponse();
 	resp->setStatus(Status(status));
+	
+	std::string body = "";
 
-	std::string body = resp->getReason();
-	if (msg.length() > 0)
-		body += ": " + msg;
+	if (status == Status(NOT_FOUND))
+	{
+		std::string error_path = this->serv_config.getError();
+		std::cout << "error_path : " << error_path << std::endl;
+		std::ifstream fin(error_path);
+		fin >> body;
+		std::cout << "body check : " << body << std::endl;
+	}
+	else
+	{
+		body = resp->getReason();
+		if (msg.length() > 0)
+			body += ": " + msg;
+	}
 
 	unsigned int slen = body.length();
 	char *sdata = new char[slen];
@@ -570,6 +580,7 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 
 	resp->addHeader("Content-Type", "text/plain");
 	resp->addHeader("Content-Length", slen);
+
 	if (cl->getRequset()->getMethod() != Method(HEAD))
 		resp->setData((byte*)sdata, slen);
 
