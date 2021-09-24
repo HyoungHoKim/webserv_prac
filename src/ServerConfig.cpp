@@ -1,6 +1,6 @@
 #include "ServerConfig.hpp"
 
-ServerConfig::ServerConfig() : max_body_size(0)
+ServerConfig::ServerConfig() : autoindex(false), max_body_size(0)
 {
 }
 
@@ -10,13 +10,17 @@ ServerConfig::~ServerConfig()
 
 bool	ServerConfig::isValidDirective(std::string temp)
 {
+	std::cout << temp << std::endl;
 	if (!temp.compare("listen") ||
 		!temp.compare("location") ||
 		!temp.compare("root") ||
 		!temp.compare("methods") ||
 		!temp.compare("index") ||
 		!temp.compare("server_name") ||
-		!temp.compare("client_max_body_size"))
+		!temp.compare("client_max_body_size") ||
+		!temp.compare("CGI") ||
+		!temp.compare("exec") ||
+		!temp.compare("autoindex"))
 		return (true);
 	else
 		return (false);
@@ -25,12 +29,10 @@ bool	ServerConfig::isValidDirective(std::string temp)
 void	ServerConfig::initServer(std::vector<std::string>::iterator &it)
 {
 	if (*it != "{")
-	{
-		std::cout << "3" << std::endl;
 		throw errorInConfig();
-	}
 	while (*(++it) != "}")
 	{
+		std::cout << *it << std::endl;
 		if (isValidDirective(*it))
 			getDirective(it);
 	}
@@ -55,6 +57,42 @@ void	ServerConfig::getDirective(std::vector<std::string>::iterator &it)
 		this->parseServerName(++it);
 	else if (!temp.compare("client_max_body_size"))
 		this->parseClientMaxBodySize(++it);
+	else if (!temp.compare("autoindex"))
+		this->parseAutoindex(++it);
+	else if (!temp.compare("CGI"))
+		this->parseCGI(++it);
+	else if (!temp.compare("exec"))
+		this->parseExec(++it);
+}
+
+void	ServerConfig::parseCGI(std::vector<std::string>::iterator &it)
+{
+	this->cgi_ext = *it++;
+	if (*it == ";")
+		it++;
+	else
+		throw errorInConfig();
+}
+
+void	ServerConfig::parseExec(std::vector<std::string>::iterator &it)
+{
+	this->exec = *it++;
+	if (*it == ";")
+		it++;
+	else
+		throw errorInConfig();
+}
+
+void	ServerConfig::parseAutoindex(std::vector<std::string>::iterator &it)
+{
+	if (*it == "off")
+		autoindex = false;
+	else if (*it == "on")
+		autoindex = true;
+	if (*it == ";")
+		it++;
+	else
+		throw errorInConfig();
 }
 
 void	ServerConfig::parseListen(std::vector<std::string>::iterator &it)
@@ -65,6 +103,8 @@ void	ServerConfig::parseListen(std::vector<std::string>::iterator &it)
 	it++;
 	if (*it == ";")
 		it++;
+	else
+		throw errorInConfig();
 }
 
 void	ServerConfig::parseLocations(std::vector<std::string>::iterator &it)
@@ -78,8 +118,8 @@ void	ServerConfig::parseLocations(std::vector<std::string>::iterator &it)
 void	ServerConfig::loopLocation(std::vector<std::string>::iterator &it, std::vector<ServerConfig> &locations)
 {
 	this->uri = *it++;
-	// if (*it != "{")
-	// 	error
+	if (*it != "{")
+		throw errorInConfig();
 	while (*(++it) != "}")
 	{
 		if (isValidDirective(*it))
@@ -155,9 +195,24 @@ std::string ServerConfig::getRoot()
 	return (this->root);
 }
 
+bool		ServerConfig::getAutoindex() const
+{
+	return (this->autoindex);
+}
+
 std::string ServerConfig::getError() const
 {
 	return (this->error);
+}
+
+std::string ServerConfig::getCgiExt() const
+{
+	return (this->cgi_ext);
+}
+
+std::string ServerConfig::getExec() const
+{
+	return (this->exec);
 }
 
 std::vector<std::string> ServerConfig::getMethod() const
