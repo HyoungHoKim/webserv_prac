@@ -78,6 +78,7 @@ Resource *ResourceHost::readDirectory(std::string path, struct stat sb)
 	if (this->autoIndex)
 	{
 		std::string listing = generateDirList(path);
+		std::cout << listing << std::endl;
 
 		unsigned int slen = listing.length();
 		char *sdata = new char[slen];
@@ -116,7 +117,7 @@ std::string ResourceHost::generateDirList(std::string path)
 		if (ent->d_name[0] == '.')
 			continue;
 
-		ret << "<a href=\"" << uri << ent->d_name << "\"" << ent->d_name << "</a><br />";
+		ret << "<a href=\"" << uri << ent->d_name << "\">" << ent->d_name << "</a><br />";
 	}
 	closedir(dir);
 	ret << "</body><html>";
