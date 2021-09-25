@@ -10,7 +10,6 @@ ServerConfig::~ServerConfig()
 
 bool	ServerConfig::isValidDirective(std::string temp)
 {
-	std::cout << temp << std::endl;
 	if (!temp.compare("listen") ||
 		!temp.compare("location") ||
 		!temp.compare("root") ||
@@ -108,10 +107,10 @@ void	ServerConfig::parseListen(std::vector<std::string>::iterator &it)
 
 	this->listen = temp;
 	it++;
-	if (*it == ";")
-		it++;
-	else
-		throw errorInConfig();
+	// if (*it == ";")
+	// 	it++;
+	// else
+	// 	throw errorInConfig();
 }
 
 void	ServerConfig::parseLocations(std::vector<std::string>::iterator &it)

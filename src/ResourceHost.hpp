@@ -19,6 +19,7 @@ class ResourceHost
 {
 private:
 	std::string baseDiskPath;
+	bool autoIndex;
 	std::vector<std::string> validIndexes;
 	std::map<std::string, std::string> mimeMap;
 
@@ -29,12 +30,11 @@ private:
 	std::string generateDirList(std::string dirPath);
 
 public:
-	ResourceHost(std::string base, std::vector<std::string> _validIndexes);
+	ResourceHost(std::string base, bool _autoIndex, std::vector<std::string> _validIndexes);
 	~ResourceHost();
 
 	std::string getBaseDiskPath(void) const;
 
-	Resource *getResource(Resource *res, bool writeToDisk);
 	Resource *getResource(std::string uri);
 };
 

@@ -1,7 +1,7 @@
 #include "ResourceHost.hpp"
 
-ResourceHost::ResourceHost(std::string base, std::vector<std::string> _validIndexes)
-: baseDiskPath(base), validIndexes(_validIndexes)
+ResourceHost::ResourceHost(std::string base, bool _autoIndex, std::vector<std::string> _validIndexes)
+: baseDiskPath(base), autoIndex(_autoIndex), validIndexes(_validIndexes)
 {
 	initMimeMap();
 }
@@ -75,18 +75,19 @@ Resource *ResourceHost::readDirectory(std::string path, struct stat sb)
 	if (!(sb.st_mode & S_IRWXU))
 		return (NULL);
 	
-	/*
-	std::string listing = generateDirList(path);
+	if (this->autoIndex)
+	{
+		std::string listing = generateDirList(path);
 
-	unsigned int slen = listing.length();
-	char *sdata = new char[slen];
-	bzero(sdata, slen);
-	strncpy(sdata, listing.c_str(), slen);
+		unsigned int slen = listing.length();
+		char *sdata = new char[slen];
+		bzero(sdata, slen);
+		strncpy(sdata, listing.c_str(), slen);
 
-	res = new Resource(path, true);
-	res->setMimeType("text/html");
-	res->setData((byte*)sdata, slen);
-	*/
+		res = new Resource(path, true);
+		res->setMimeType("text/html");
+		res->setData((byte*)sdata, slen);
+	}
 
 	return (res);
 }
