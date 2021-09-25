@@ -562,10 +562,13 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 	if (status == Status(NOT_FOUND))
 	{
 		std::string error_path = this->serv_config.getError();
-		std::cout << "error_path : " << error_path << std::endl;
 		std::ifstream fin(error_path);
-		fin >> body;
-		std::cout << "body check : " << body << std::endl;
+		while (!fin.eof())
+		{
+			std::string str;
+			getline(fin, str);
+			body += str;
+		}
 		fin.close();
 	}
 	else

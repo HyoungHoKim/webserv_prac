@@ -107,10 +107,10 @@ void	ServerConfig::parseListen(std::vector<std::string>::iterator &it)
 
 	this->listen = temp;
 	it++;
-	if (*it == ";")
-		it++;
-	else
-		throw errorInConfig();
+	// if (*it == ";")
+	// 	it++;
+	// else
+	// 	throw errorInConfig();
 }
 
 void	ServerConfig::parseLocations(std::vector<std::string>::iterator &it)
