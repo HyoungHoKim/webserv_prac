@@ -371,13 +371,24 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 		return;
 	}
 
-	if (idx == 0 
+	if (idx != 0 
 		&& this->serv_config.getLocations()[idx].getStatusCode() != 0
 		&& this->serv_config.getLocations()[idx].getRedir() != "")
 	{
+		std::cout << "redir test" << std::endl;
 		if (req->getMethod() == Method(GET))
 		{
-			
+			int redir_code = this->serv_config.getLocations()[idx].getStatusCode();
+			if (redir_code == Status(MOVED_PERMANENTLY) || redir_code == Status(FOUND))
+			{
+				HTTPResponse *resp = new HTTPResponse();
+				resp->setStatus(Status(redir_code));
+				resp->addHeader("Location", this->serv_config.getLocations()[idx].getRedir());
+				sendResponse(cl, resp, false);
+				delete resp;
+			}
+			else
+				sendStatusResponse(cl, Status(BAD_REQUEST));
 		}
 		else
 		{
@@ -385,7 +396,7 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 				req->methodIntToStr(req->getMethod()) << std::endl;
 			sendStatusResponse(cl, Status(METHOD_NOT_ALLOW));
 		}
-		
+		return ;
 	}
 
 	switch (req->getMethod())

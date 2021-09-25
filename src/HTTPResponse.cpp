@@ -35,6 +35,10 @@ void HTTPResponse::determineStatusCode()
 		status = Status(CREATE);
 	else if (reason.find("No Content") != std::string::npos)
 		status = Status(NO_CONTENT);
+	else if (reason.find("Moved Permantly"))
+		status = Status(MOVED_PERMANENTLY);
+	else if (reason.find("Found"))
+		status = Status(FOUND);
 	else if (reason.find("Bad Request") != std::string::npos)
 		status = Status(BAD_REQUEST);
 	else if (reason.find("Not Found") != std::string::npos)
@@ -64,6 +68,12 @@ void HTTPResponse::determineReasonStr()
 		break;
 	case Status(NO_CONTENT):
 		reason = "No Content\0";
+		break;
+	case Status(MOVED_PERMANENTLY):
+		reason = "Moved Permantly\0";
+		break;
+	case Status(FOUND):
+		reason = "Found\0";
 		break;
 	case Status(BAD_REQUEST):
 		reason = "Bad Request\0";
