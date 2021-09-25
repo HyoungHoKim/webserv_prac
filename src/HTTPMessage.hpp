@@ -38,6 +38,8 @@ enum Status
 	NO_CONTENT = 204,
 
 	// 3xx Redirection
+	MOVED_PERMANENTLY = 301,
+	FOUND = 302,
 
 	// 4xx Client Error
 	BAD_REQUEST = 400,

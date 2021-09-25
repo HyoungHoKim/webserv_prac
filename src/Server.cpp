@@ -362,13 +362,30 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	size_t max_body = this->serv_config.getLocations()[idx].getClientMaxBodySize();
 	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot(),
 		this->serv_config.getLocations()[idx].getAutoindex(), config_index);
-
+	
 	if (!check_allowed_methods(req, idx))
 	{
 		std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " <<
 			req->methodIntToStr(req->getMethod()) << std::endl;
 		sendStatusResponse(cl, Status(METHOD_NOT_ALLOW));
 		return;
+	}
+
+	if (idx == 0 
+		&& this->serv_config.getLocations()[idx].getStatusCode() != 0
+		&& this->serv_config.getLocations()[idx].getRedir() != "")
+	{
+		if (req->getMethod() == Method(GET))
+		{
+			
+		}
+		else
+		{
+			std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " <<
+				req->methodIntToStr(req->getMethod()) << std::endl;
+			sendStatusResponse(cl, Status(METHOD_NOT_ALLOW));
+		}
+		
 	}
 
 	switch (req->getMethod())
