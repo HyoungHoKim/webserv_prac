@@ -150,9 +150,15 @@ Resource *ResourceHost::getResource(std::string uri)
 		return (NULL);
 	
 	if (sb.st_mode & S_IFDIR)
+	{
+		std::cout << "here 1" << std::endl;
 		res = readDirectory(path, sb);
+	}
 	else if (sb.st_mode & S_IFREG)
+	{
+		std::cout << "here 2" << std::endl;
 		res = readFile(path, sb);
+	}
 	else
 		return (NULL);
 

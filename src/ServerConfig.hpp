@@ -13,8 +13,10 @@ class	ServerConfig
 	private:
 		bool	isValidDirective(std::string temp);
 		bool	autoindex;
+		int		status_code;
 		int		id;
 		std::string listen;
+		std::string	redir;
 		std::vector<ServerConfig> locations;
 		std::string root;
 		std::string error;
@@ -44,6 +46,8 @@ class	ServerConfig
 		std::vector<std::string> getMethod() const;
 		std::vector<std::string> getIndex();
 		std::vector<std::string> getServerName() const;
+		int 		getStatusCode() const;
+		std::string getRedir() const;
 		void		initServer(std::vector<std::string>::iterator &it);
 		void		getDirective(std::vector<std::string>::iterator &it);
 		void		parseListen(std::vector<std::string>::iterator &it);
@@ -57,6 +61,7 @@ class	ServerConfig
 		void		parseClientMaxBodySize(std::vector<std::string>::iterator &it);
 		void		parseCGI(std::vector<std::string>::iterator &it);
 		void		parseExec(std::vector<std::string>::iterator &it);
+		void		parseRedir(std::vector<std::string>::iterator &it);
 		void		loopLocation(std::vector<std::string>::iterator &it, std::vector<ServerConfig> &locations);
 		class	errorInConfig : public std::exception
 		{

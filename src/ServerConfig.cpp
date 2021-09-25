@@ -1,6 +1,6 @@
 #include "ServerConfig.hpp"
 
-ServerConfig::ServerConfig() : autoindex(false), max_body_size(0)
+ServerConfig::ServerConfig() : autoindex(false), status_code(0), max_body_size(0)
 {
 }
 
@@ -20,6 +20,7 @@ bool	ServerConfig::isValidDirective(std::string temp)
 		!temp.compare("CGI") ||
 		!temp.compare("exec") ||
 		!temp.compare("error") ||
+		!temp.compare("return") ||
 		!temp.compare("autoindex"))
 		return (true);
 	else
@@ -64,11 +65,20 @@ void	ServerConfig::getDirective(std::vector<std::string>::iterator &it)
 		this->parseExec(++it);
 	else if (!temp.compare("error"))
 		this->parseError(++it);
+	else if (!temp.compare("return"))
+		this->parseRedir(++it);
 }
 
 void	ServerConfig::parseError(std::vector<std::string>::iterator &it)
 {
 	this->error = *it++;
+}
+
+void	ServerConfig::parseRedir(std::vector<std::string>::iterator &it)
+{
+	if (!(this->status_code = ft::stoi(*it++)))
+		throw errorInConfig();
+	this->redir = *it++;
 }
 
 void	ServerConfig::parseCGI(std::vector<std::string>::iterator &it)
@@ -116,7 +126,6 @@ void	ServerConfig::parseListen(std::vector<std::string>::iterator &it)
 void	ServerConfig::parseLocations(std::vector<std::string>::iterator &it)
 {
 	ServerConfig loc;
-
 	loc = *this;
 	loc.loopLocation(it, this->locations);
 }
@@ -246,10 +255,21 @@ size_t	ServerConfig::getClientMaxBodySize() const
 	return (this->max_body_size);
 }
 
+int		ServerConfig::getStatusCode() const
+{
+	return (this->status_code);
+}
+
+std::string	ServerConfig::getRedir() const
+{
+	return (this->redir);
+}
+
 void	ServerConfig::setID(int _id)
 {
 	this->id = _id;
 }
+
 
 const char* ServerConfig::errorInConfig::what() const throw()
 {
