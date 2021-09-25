@@ -121,10 +121,7 @@ bool HTTPMessage::checkHeaderEnd()
 
 	setReadPos(getReadPos() - 2);
 	for (int i = 0; i < 2; i++)
-	{
 		flag += getChar();
-		std::cout << "End char : " << (int)flag[i] << std::endl;
-	}
 
 	if (flag[0] == 13 && flag[1] == 10)
 		return (true);

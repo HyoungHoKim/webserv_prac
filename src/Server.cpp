@@ -180,10 +180,7 @@ void Server::run(void)
 			else
 			{
 				if (this->clientMap.find(curr_event->ident) == this->clientMap.end())
-				{
-					std::cout << "Could not find client" << std::endl;
 					continue;
-				}
 				
 				if (curr_event->flags & EV_EOF)
 				{
@@ -215,7 +212,6 @@ void Server::run(void)
 
 bool Server::readClient(Client *cl, int data_len)
 {
-	std::cout << "Read Client" << std::endl;
 	if (cl == NULL)
 		return (false);
 	
@@ -247,14 +243,9 @@ bool Server::readClient(Client *cl, int data_len)
 		std::cout << pData << std::endl;
 		std::cout << "\n------------------------------" << std::endl;
 	}
-
-	std::cout << ">> readClient \n";
 	cl->getRequset()->printData();
-	//std::cout << "data_len : " << data_len << ", lenRecv : " << lenRecv << std::endl; 
-	//std::cout << "------------------------------" << std::endl;
 	delete[] pData;
 	int status = cl->getRequset()->parse();
-	std::cout << "status : " << status << std::endl; 
 
 	if (lenRecv <= 0)
 		return (false);
@@ -269,9 +260,7 @@ bool Server::readClient(Client *cl, int data_len)
 	}
 	else if (status == Parsing(COMPLETE))
 	{
-		std::cout << "Parsing done! Request start" << std::endl;
 		handleRequest(cl, cl->getRequset());
-		std::cout << ">> After Handle Request " << std::endl;
 		cl->getRequset()->printData();
 		cl->deleteRequest();
 		return (true);
@@ -281,7 +270,6 @@ bool Server::readClient(Client *cl, int data_len)
 
 bool Server::writeClient(Client *cl, int avail_bytes)
 {
-	std::cout << "Write Client" << std::endl;
 	if (cl == NULL)
 		return (false);
 	
@@ -299,7 +287,6 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	SendQueueItem *item = cl->nextInSendQueue();
 	if (item == NULL)
 		return (false);
-	std::cout << "writeClient test" << std::endl;
 	pData = item->getData();
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
@@ -375,7 +362,6 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 		&& this->serv_config.getLocations()[idx].getStatusCode() != 0
 		&& this->serv_config.getLocations()[idx].getRedir() != "")
 	{
-		std::cout << "redir test" << std::endl;
 		if (req->getMethod() == Method(GET))
 		{
 			int redir_code = this->serv_config.getLocations()[idx].getStatusCode();
@@ -644,8 +630,6 @@ void Server::sendResponse(Client *cl, HTTPResponse *resp, bool disconnect, size_
 		resp->addHeader("Connection", "close");
 	
 	byte *pData = resp->create();
-	std::cout << "maxBody : " << maxBody << std::endl;
-	std::cout << "DataLen : " << resp->getDataLength() << std::endl;
 	if (maxBody < resp->getDataLength() && maxBody != 0)
 		sendStatusResponse(cl, Status(REQUEST_ENTITY_TOO_LARGE));
 	else
