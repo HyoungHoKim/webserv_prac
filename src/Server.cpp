@@ -410,7 +410,6 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
 {
 	std::cout << "GET or HEAD" << " Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
-	std::cout << uri << std::endl;
 	Resource *r = resHost->getResource(uri);
 
 	if (r != NULL)
