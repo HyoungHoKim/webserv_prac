@@ -48,6 +48,7 @@ class	ServerConfig
 		void		getDirective(std::vector<std::string>::iterator &it);
 		void		parseListen(std::vector<std::string>::iterator &it);
 		void		parseLocations(std::vector<std::string>::iterator &it);
+		void		parseError(std::vector<std::string>::iterator &it);
 		void		parseRoot(std::vector<std::string>::iterator &it);
 		void		parseMethod(std::vector<std::string>::iterator &it);
 		void		parseIndex(std::vector<std::string>::iterator &it);

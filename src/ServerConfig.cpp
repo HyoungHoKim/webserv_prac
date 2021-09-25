@@ -19,6 +19,7 @@ bool	ServerConfig::isValidDirective(std::string temp)
 		!temp.compare("client_max_body_size") ||
 		!temp.compare("CGI") ||
 		!temp.compare("exec") ||
+		!temp.compare("error") ||
 		!temp.compare("autoindex"))
 		return (true);
 	else
@@ -59,8 +60,15 @@ void	ServerConfig::getDirective(std::vector<std::string>::iterator &it)
 		this->parseAutoindex(++it);
 	else if (!temp.compare("CGI"))
 		this->parseCGI(++it);
-	// else if (!temp.compare("exec"))
-	// 	this->parseExec(++it);
+	else if (!temp.compare("exec"))
+		this->parseExec(++it);
+	else if (!temp.compare("error"))
+		this->parseError(++it);
+}
+
+void	ServerConfig::parseError(std::vector<std::string>::iterator &it)
+{
+	this->error = *it++;
 }
 
 void	ServerConfig::parseCGI(std::vector<std::string>::iterator &it)
