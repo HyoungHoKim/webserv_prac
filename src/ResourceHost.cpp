@@ -81,7 +81,12 @@ Resource *ResourceHost::readDirectory(std::string path, struct stat sb)
 	else
 	{
 		std::ifstream fin("./www/dirPage.html");
-		fin >> listing;
+		while (!fin.eof())
+		{
+			std::string str;
+			getline(fin, str);
+			listing += str;
+		}
 		fin.close();
 	}
 

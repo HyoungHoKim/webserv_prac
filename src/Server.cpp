@@ -566,6 +566,7 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 		std::ifstream fin(error_path);
 		fin >> body;
 		std::cout << "body check : " << body << std::endl;
+		fin.close();
 	}
 	else
 	{
