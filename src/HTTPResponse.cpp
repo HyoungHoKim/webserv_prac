@@ -45,6 +45,8 @@ void HTTPResponse::determineStatusCode()
 		status = Status(SERVER_ERROR);
 	else if (reason.find("Not Implemented") != std::string::npos)
 		status = Status(NOT_IMPLEMENTED);
+	else if (reason.find("Request Entity Too Large") != std::string::npos)
+		status = Status(REQUEST_ENTITY_TOO_LARGE);
 }
 
 void HTTPResponse::determineReasonStr()
@@ -78,6 +80,8 @@ void HTTPResponse::determineReasonStr()
 	case Status(NOT_IMPLEMENTED):
 		reason = "Not Implemented\0";
 		break;
+	case Status(REQUEST_ENTITY_TOO_LARGE):
+		reason = "Request Entity Too Large\0";
 	default:
 		break;
 	}

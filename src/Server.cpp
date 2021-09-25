@@ -359,6 +359,7 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	if (this->resHost)
 		delete this->resHost;
 	std::vector<std::string> config_index = this->serv_config.getLocations()[idx].getIndex();
+	size_t max_body = this->serv_config.getLocations()[idx].getClientMaxBodySize();
 	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot(),
 		this->serv_config.getLocations()[idx].getAutoindex(), config_index);
 
@@ -374,21 +375,21 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	{
 	case Method(HEAD):
 	case Method(GET):
-		handleGet(cl, req);
+		handleGet(cl, req, max_body);
 		break;
 	case Method(POST):
-		handlePost(cl, req);
+		handlePost(cl, req, max_body);
 		break;
 	case Method(PUT):
-		handlePut(cl, req);
+		handlePut(cl, req, max_body);
 		break;
 	case Method(DELETE):
-		handleDelete(cl, req);
+		handleDelete(cl, req, max_body);
 		break;
 	}
 }
 
-void Server::handleGet(Client *cl, HTTPRequest *req)
+void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
 {
 	std::cout << "GET or HEAD" << " Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
@@ -398,7 +399,11 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 	if (r != NULL)
 	{
 		HTTPResponse *resp = new HTTPResponse();
-		resp->setStatus(Status(OK));
+
+		if (r->isDirectory())
+			resp->setStatus(Status(NOT_FOUND));
+		else
+			resp->setStatus(Status(OK));
 		resp->addHeader("Content-Type", r->getMimeType());
 		resp->addHeader("Content-Length", r->getSize());
 
@@ -410,7 +415,7 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 		if (connection_val.compare("close") == 0)
 			dc = true;
 
-		sendResponse(cl, resp, dc);
+		sendResponse(cl, resp, dc, maxBody);
 		delete resp;
 		delete r;
 	}
@@ -421,7 +426,7 @@ void Server::handleGet(Client *cl, HTTPRequest *req)
 	}
 }
 
-void Server::handlePost(Client *cl, HTTPRequest *req)
+void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 {
 	std::cout << "POST Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
@@ -444,7 +449,7 @@ void Server::handlePost(Client *cl, HTTPRequest *req)
 		if (connection_val.compare("close") == 0)
 			dc = true;
 
-		sendResponse(cl, resp, dc);
+		sendResponse(cl, resp, dc, maxBody);
 		delete resp;
 		delete r;
 		fout.close();
@@ -467,14 +472,14 @@ void Server::handlePost(Client *cl, HTTPRequest *req)
 		if (connection_val.compare("close") == 0)
 			dc = true;
 
-		sendResponse(cl, resp, dc);
+		sendResponse(cl, resp, dc, maxBody);
 		delete resp;
 		delete r;
 		fout.close();
 	}
 }
 
-void Server::handlePut(Client *cl, HTTPRequest *req)
+void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
 {
 	std::cout << "PUT Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
@@ -504,13 +509,13 @@ void Server::handlePut(Client *cl, HTTPRequest *req)
 	if (connection_val.compare("close") == 0)
 		dc = true;
 	
-	sendResponse(cl, resp, dc);
+	sendResponse(cl, resp, dc, maxBody);
 	delete resp;
 	delete r;
 	fout.close();
 }
 
-void Server::handleDelete(Client *cl, HTTPRequest *req)
+void Server::handleDelete(Client *cl, HTTPRequest *req, size_t maxBody)
 {
 	std::cout << "DELETE Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
@@ -546,7 +551,7 @@ void Server::handleDelete(Client *cl, HTTPRequest *req)
 		if (connection_val.compare("close") == 0)
 			dc = true;
 
-		sendResponse(cl, resp, dc);
+		sendResponse(cl, resp, dc, maxBody);
 		delete resp;
 		delete r;
 	}
@@ -588,13 +593,13 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 
 	if (cl->getRequset()->getMethod() != Method(HEAD))
 		resp->setData((byte*)sdata, slen);
-
+	
 	sendResponse(cl, resp, false);
 
 	delete resp;
 }
 
-void Server::sendResponse(Client *cl, HTTPResponse *resp, bool disconnect)
+void Server::sendResponse(Client *cl, HTTPResponse *resp, bool disconnect, size_t maxBody)
 {
 	resp->addHeader("Server", "httpserver/1.0");
 
@@ -612,9 +617,14 @@ void Server::sendResponse(Client *cl, HTTPResponse *resp, bool disconnect)
 		resp->addHeader("Connection", "close");
 	
 	byte *pData = resp->create();
-
-	cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));
+	std::cout << "maxBody : " << maxBody << std::endl;
+	std::cout << "DataLen : " << resp->getDataLength() << std::endl;
+	if (maxBody < resp->getDataLength() && maxBody != 0)
+		sendStatusResponse(cl, Status(REQUEST_ENTITY_TOO_LARGE));
+	else
+		cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));
 }
+
 
 bool exit_with_perror(const std::string &msg)
 {

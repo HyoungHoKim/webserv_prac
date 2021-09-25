@@ -50,7 +50,7 @@ Resource *ResourceHost::readFile(std::string path, struct stat sb)
 	if (mimetype.length() != 0)
 		res->setMimeType(mimetype);
 	else
-		res->setMimeType("application/octet-stream");
+		res->setMimeType("text/html");
 	
 	res->setData(fdata, len);
 	return (res);

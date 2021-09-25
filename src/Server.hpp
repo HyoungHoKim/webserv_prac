@@ -66,13 +66,13 @@ public:
 
 	bool check_allowed_methods(HTTPRequest *req, int& idx);
 	void handleRequest(Client *cl, HTTPRequest *req);
-	void handleGet(Client *cl, HTTPRequest *req);
-	void handlePost(Client *cl, HTTPRequest *req);
-	void handlePut(Client *cl, HTTPRequest *req);
-	void handleDelete(Client *cl, HTTPRequest *Req);
+	void handleGet(Client *cl, HTTPRequest *req, size_t maxBody = 0);
+	void handlePost(Client *cl, HTTPRequest *req, size_t maxBody = 0);
+	void handlePut(Client *cl, HTTPRequest *req, size_t maxBody = 0);
+	void handleDelete(Client *cl, HTTPRequest *Req, size_t maxBody = 0);
 
 	void sendStatusResponse(Client *cl, int status, std::string msg = "");
-	void sendResponse(Client *cl, HTTPResponse *resp, bool disconnect);
+	void sendResponse(Client *cl, HTTPResponse *resp, bool disconnect, size_t maxBody = 0);
 };
 
 bool exit_with_perror(const std::string &msg);
