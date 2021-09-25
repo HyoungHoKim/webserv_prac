@@ -75,20 +75,24 @@ Resource *ResourceHost::readDirectory(std::string path, struct stat sb)
 	if (!(sb.st_mode & S_IRWXU))
 		return (NULL);
 	
+	std::string listing = "";
 	if (this->autoIndex)
+		listing = generateDirList(path);
+	else
 	{
-		std::string listing = generateDirList(path);
-		std::cout << listing << std::endl;
-
-		unsigned int slen = listing.length();
-		char *sdata = new char[slen];
-		bzero(sdata, slen);
-		strncpy(sdata, listing.c_str(), slen);
-
-		res = new Resource(path, true);
-		res->setMimeType("text/html");
-		res->setData((byte*)sdata, slen);
+		std::ifstream fin("./www/dirPage.html");
+		fin >> listing;
+		fin.close();
 	}
+
+	unsigned int slen = listing.length();
+	char *sdata = new char[slen];
+	bzero(sdata, slen);
+	strncpy(sdata, listing.c_str(), slen);
+
+	res = new Resource(path, true);
+	res->setMimeType("text/html");
+	res->setData((byte*)sdata, slen);
 
 	return (res);
 }
