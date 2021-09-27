@@ -82,7 +82,10 @@ std::string HTTPMessage::getLine()
 		}
 		ret += getChar();
 	}
-
+	//std::cout << "getline check" <<  std::endl;
+	//for (char c : ret)
+	//	std::cout << "/" << (int)c;
+	//std::cout << "\n";
 	if (!newLineReached)
 	{
 		setReadPos(startPos);
@@ -133,20 +136,18 @@ int HTTPMessage::parseHeaders()
 	std::string hline = "";
 	std::string app = "";
 
-	hline = getLine();
-
-	while (hline != "")
+	while ((hline = getLine()) != "")
 	{
 		app = hline;
+		std::cout << "hline : " << hline << std::endl;
 		size_t kpos = app.find(':');
-		if (kpos == std::string::npos)
+		if (kpos == std::string::npos || kpos == 0)
 		{
 			std::cout << "Could not addHeader: " << app.c_str() << std::endl;
 			return (Status(BAD_REQUEST));
 		}
 		addHeader(hline);
 		erase(0, getReadPos());
-		hline = getLine();
 	}
 	if (checkHeaderEnd())
 	{

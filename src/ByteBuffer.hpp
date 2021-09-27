@@ -166,8 +166,17 @@ public:
 		else
 		{
 			std::cout << "-------- read Request --------" << std::endl;
-			for (int i = 0; i < printLen; i++)
-				std::cout << buf[i];
+			for (int i = 0; i < (int)size(); i++)
+			{
+				if (buf[i] == 13 || buf[i] == 10)
+				{
+					std::cout << "/" << (int)buf[i];
+					if (buf[i] == 10)
+						std::cout << "\n";
+				}
+				else
+					std::cout << buf[i];
+			}
 			std::cout << "\n------------------------------" << std::endl;
 		}
 	}

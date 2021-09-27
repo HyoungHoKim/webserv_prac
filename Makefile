@@ -11,7 +11,7 @@ SRCS	:= $(addprefix, $(D_SRCS)/, $(SRC))
 OBJS	:= $(addprefix $(D_OBJS)/, $(SRC:.cpp=.o))
 
 CC		:= clang++
-CFLAGS  := -Wall -Wextra -Werror -g -std=c++98 -pthread # -fsanitize=address
+CFLAGS  := -Wall -Wextra -Werror -g -pthread # -std=c++98 -fsanitize=address
 RM		:= rm -rf
 
 INC		:= -I$(D_INC)/

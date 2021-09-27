@@ -64,7 +64,7 @@ public:
 	bool readClient(Client *cl, int data_len);
 	bool writeClient(Client *cl, int avail_bytes);
 
-	bool check_allowed_methods(HTTPRequest *req, int& idx);
+	bool check_allowed_methods(HTTPRequest *req, int &idx);
 	void handleRequest(Client *cl, HTTPRequest *req);
 	void handleGet(Client *cl, HTTPRequest *req, size_t maxBody = 0);
 	void handlePost(Client *cl, HTTPRequest *req, size_t maxBody = 0);

@@ -217,33 +217,41 @@ bool Server::readClient(Client *cl, int data_len)
 	
 	if (data_len <= 0)
 		data_len = 1400;
-	else
-		data_len++;
 	
-	char *pData = new char[data_len];
-	bzero(pData, data_len);
+	char *pData = new char[data_len + 1];
+	bzero(pData, data_len + 1);
 
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
 
-	int printLen = (int)lenRecv;
-	if (printLen > 1000)
-	{
-		std::cout << "-------- receive Request --------" << std::endl;
-		for (int i = 0; i < 100; i++)
-			std::cout << pData[i];
-		std::cout << "...." << std::endl;
-		for (int i = printLen - 100; i < printLen; i++)
-			std::cout << pData[i];
-		std::cout << "\n------------------------------" << std::endl;
-	}
-	else
-	{
-		std::cout << "-------- receive Request --------" << std::endl;
-		std::cout << pData << std::endl;
-		std::cout << "\n------------------------------" << std::endl;
-	}
-	cl->getRequset()->printData();
+	//int printLen = (int)lenRecv;
+	//if (printLen > 1000)
+	//{
+	//	std::cout << "-------- receive Request --------" << std::endl;
+	//	for (int i = 0; i < 100; i++)
+	//		std::cout << pData[i];
+	//	std::cout << "...." << std::endl;
+	//	for (int i = printLen - 100; i < printLen; i++)
+	//		std::cout << pData[i];
+	//	std::cout << "\n------------------------------" << std::endl;
+	//}
+	//else
+	//{
+	//	std::cout << "-------- receive Request --------" << std::endl;
+	//	for (int i = 0; i < lenRecv; i++)
+	//	{
+	//		if (pData[i] == 13 || pData[i] == 10)
+	//		{
+	//			std::cout << "/" << (int)pData[i];
+	//			if (pData[i] == 10)
+	//				std::cout << "\n";
+	//		}
+	//		else
+	//			std::cout << pData[i];
+	//	}
+	//	std::cout << "\n------------------------------" << std::endl;
+	//}
+	//cl->getRequset()->printData();
 	delete[] pData;
 	int status = cl->getRequset()->parse();
 
@@ -270,6 +278,7 @@ bool Server::readClient(Client *cl, int data_len)
 
 bool Server::writeClient(Client *cl, int avail_bytes)
 {
+	//std::cout << "writeClient" << std::endl;
 	if (cl == NULL)
 		return (false);
 	
@@ -291,7 +300,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
 
-	std::cout << "---------- Response Message ----------" << std::endl;
+	//std::cout << "---------- Response Message ----------" << std::endl;
 
 	if (avail_bytes >= remaining)
 		attempt_sent = remaining;
@@ -299,14 +308,14 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 		attempt_sent = avail_bytes;
 
 	actual_sent = send(cl->getSocket(), pData + (item->getOffset()), attempt_sent, 0);
-	if (actual_sent >= 0)
-		std::cout << pData << std::endl;
-	else
-		std::cout << "send DataLen : " << actual_sent << std::endl;
+	//if (actual_sent >= 0)
+	//	std::cout << pData << std::endl;
+	//else
+	//	std::cout << "send DataLen : " << actual_sent << std::endl;
 	if (actual_sent >= 0)
 		item->setOffset(item->getOffset() + actual_sent);
 
-	std::cout << "----------------------------------" << std::endl;
+	//std::cout << "----------------------------------" << std::endl;
 
 	if (item->getOffset() >= item->getSize())
 		cl->dequeueFromSendQueue();
@@ -320,19 +329,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 // 여기 수정
 bool Server::check_allowed_methods(HTTPRequest *req, int& idx)
 {
-	std::vector<std::string> allowed_methods = this->serv_config.getLocations()[idx].getMethod();
-	for (size_t i = 0; i < allowed_methods.size(); i++)
-	{
-		if (req->methodIntToStr(req->getMethod()) == allowed_methods[i])
-			return (true);
-	}
-	return (false);
-}
-
-void Server::handleRequest(Client *cl, HTTPRequest *req)
-{
 	std::vector<ServerConfig> dir_config = this->serv_config.getLocations();
-	int idx = 0;
 	for (idx = 0; idx < static_cast<int>(dir_config.size()); idx++)
 	{
 		if (req->getConfig_dir() == dir_config[idx].getUri())
@@ -346,9 +343,21 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 	if (this->resHost)
 		delete this->resHost;
 	std::vector<std::string> config_index = this->serv_config.getLocations()[idx].getIndex();
-	size_t max_body = this->serv_config.getLocations()[idx].getClientMaxBodySize();
 	this->resHost = new ResourceHost(this->serv_config.getLocations()[idx].getRoot(),
 		this->serv_config.getLocations()[idx].getAutoindex(), config_index);
+
+	std::vector<std::string> allowed_methods = this->serv_config.getLocations()[idx].getMethod();
+	for (size_t i = 0; i < allowed_methods.size(); i++)
+	{
+		if (req->methodIntToStr(req->getMethod()) == allowed_methods[i])
+			return (true);
+	}
+	return (false);
+}
+
+void Server::handleRequest(Client *cl, HTTPRequest *req)
+{
+	int idx = 0;
 	
 	if (!check_allowed_methods(req, idx))
 	{
@@ -357,6 +366,8 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 		sendStatusResponse(cl, Status(METHOD_NOT_ALLOW));
 		return;
 	}
+
+	size_t max_body = this->serv_config.getLocations()[idx].getClientMaxBodySize();
 
 	if (idx != 0 
 		&& this->serv_config.getLocations()[idx].getStatusCode() != 0

@@ -32,6 +32,7 @@ void ByteBuffer::clear()
 {
 	rpos = 0;
 	wpos = 0;
+	
 	buf.clear();
 }
 

@@ -29,7 +29,10 @@ void Client::recvRequestData(char *buf)
 void Client::deleteRequest()
 {
 	if (this->req)
+	{
+		req->clear();
 		delete this->req;
+	}
 	this->req = NULL;
 }
 
