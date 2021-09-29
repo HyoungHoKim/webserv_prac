@@ -21,8 +21,8 @@ HTTPMessage::HTTPMessage(byte *pData, unsigned int len)
 
 HTTPMessage::~HTTPMessage()
 {
-	this->headers->clear();
-	delete this->headers;
+	if (this->headers)
+		delete this->headers;
 }
 
 void HTTPMessage::init()
@@ -257,6 +257,8 @@ int HTTPMessage::parseBody_chunked()
 			memcpy(this->data, temp, this->dataLen);
 			memcpy(this->data + this->dataLen, body.c_str(), body.length());
 			this->dataLen = totalSize - 1;
+			if (temp)
+				delete temp;
 		}
 	}
 

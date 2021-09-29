@@ -271,22 +271,14 @@ bool Server::writeClient(Client *cl, int avail_bytes)
 	remaining = item->getSize() - item->getOffset();
 	disconnect = item->getDisconnect();
 
-	//std::cout << "---------- Response Message ----------" << std::endl;
-
 	if (avail_bytes >= remaining)
 		attempt_sent = remaining;
 	else 
 		attempt_sent = avail_bytes;
 
 	actual_sent = send(cl->getSocket(), pData + (item->getOffset()), attempt_sent, 0);
-	//if (actual_sent >= 0)
-	//	std::cout << pData << std::endl;
-	//else
-	//	std::cout << "send DataLen : " << actual_sent << std::endl;
 	if (actual_sent >= 0)
 		item->setOffset(item->getOffset() + actual_sent);
-
-	//std::cout << "----------------------------------" << std::endl;
 
 	if (item->getOffset() >= item->getSize())
 		cl->dequeueFromSendQueue();
@@ -454,7 +446,7 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 		std::ofstream fout(r->getLocation(), std::ios::out | std::ios::app);
 		fout << req->getData();
 		delete r;
-
+		r = NULL;
 		r = resHost->getResource(uri);
 		HTTPResponse *resp = new HTTPResponse();
 		resp->setStatus(Status(OK));
@@ -505,6 +497,8 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
 		dc = true;
 	
 	sendResponse(cl, resp, dc, maxBody);
+	if (resp->getData())
+		delete resp->getData();
 	delete resp;
 	delete r;
 	fout.close();
@@ -558,7 +552,6 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 	resp->setStatus(Status(status));
 	
 	std::string body = "";
-
 	if (status == Status(NOT_FOUND))
 	{
 		std::string error_path = this->serv_config.getError();
@@ -590,7 +583,8 @@ void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 		resp->setData((byte*)sdata, slen);
 	
 	sendResponse(cl, resp, false);
-
+	if (sdata)
+		delete[] sdata;
 	delete resp;
 }
 

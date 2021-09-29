@@ -28,6 +28,8 @@ void Client::deleteRequest()
 	if (this->req)
 	{
 		req->clear();
+		if (req->getData())
+			delete req->getData();
 		delete this->req;
 	}
 	this->req = NULL;
