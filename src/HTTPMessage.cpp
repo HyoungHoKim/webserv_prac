@@ -82,10 +82,6 @@ std::string HTTPMessage::getLine()
 		}
 		ret += getChar();
 	}
-	//std::cout << "getline check" <<  std::endl;
-	//for (char c : ret)
-	//	std::cout << "/" << (int)c;
-	//std::cout << "\n";
 	if (!newLineReached)
 	{
 		setReadPos(startPos);
@@ -139,7 +135,6 @@ int HTTPMessage::parseHeaders()
 	while ((hline = getLine()) != "")
 	{
 		app = hline;
-		std::cout << "hline : " << hline << std::endl;
 		size_t kpos = app.find(':');
 		if (kpos == std::string::npos || kpos == 0)
 		{
@@ -151,7 +146,6 @@ int HTTPMessage::parseHeaders()
 	}
 	if (checkHeaderEnd())
 	{
-		std::cout << "header done" << std::endl;
 		erase(0, getReadPos());
 		return (Parsing(PREBODY));
 	}
@@ -250,28 +244,24 @@ int HTTPMessage::parseBody_chunked()
 		if (!this->data)
 		{
 			this->data = new byte[body.length() + 1];
-			bzero(this->data,  body.length()+ 1);
-			for (size_t i = 0; i < body.length(); i++)
-				this->data[i] = static_cast<byte>(body[i]);
-			this->data[body.length()] = '\0';
+			bzero(this->data,  body.length() + 1);
+			memcpy(this->data, body.c_str(), body.length());
+			this->dataLen = body.length();
 		}
 		else
 		{
-			std::string temp(reinterpret_cast<char*>(this->data));
-			temp += body;
-			free(this->data);
-			this->data = new byte[temp.length() + 1];
-			bzero(this->data, temp.length() + 1);
-			for (size_t i = 0; i < temp.length(); i++)
-				this->data[i] = static_cast<byte>(temp[i]);
-			this->data[temp.length()] = '\0';
+			int totalSize = this->dataLen + body.length() + 1;
+			byte *temp = this->data;
+			this->data = new byte[totalSize];
+			bzero(this->data, totalSize);
+			memcpy(this->data, temp, this->dataLen);
+			memcpy(this->data + this->dataLen, body.c_str(), body.length());
+			this->dataLen = totalSize - 1;
 		}
 	}
 
 	if (this->chunk_size == 0)
 	{
-		std::cout << ">> after while" << std::endl;
-		printData();
 		if (checkHeaderEnd())
 		{
 			erase(0, getReadPos());

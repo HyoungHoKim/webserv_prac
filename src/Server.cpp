@@ -223,35 +223,6 @@ bool Server::readClient(Client *cl, int data_len)
 
 	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
 	cl->recvRequestData(pData);
-
-	//int printLen = (int)lenRecv;
-	//if (printLen > 1000)
-	//{
-	//	std::cout << "-------- receive Request --------" << std::endl;
-	//	for (int i = 0; i < 100; i++)
-	//		std::cout << pData[i];
-	//	std::cout << "...." << std::endl;
-	//	for (int i = printLen - 100; i < printLen; i++)
-	//		std::cout << pData[i];
-	//	std::cout << "\n------------------------------" << std::endl;
-	//}
-	//else
-	//{
-	//	std::cout << "-------- receive Request --------" << std::endl;
-	//	for (int i = 0; i < lenRecv; i++)
-	//	{
-	//		if (pData[i] == 13 || pData[i] == 10)
-	//		{
-	//			std::cout << "/" << (int)pData[i];
-	//			if (pData[i] == 10)
-	//				std::cout << "\n";
-	//		}
-	//		else
-	//			std::cout << pData[i];
-	//	}
-	//	std::cout << "\n------------------------------" << std::endl;
-	//}
-	//cl->getRequset()->printData();
 	delete[] pData;
 	int status = cl->getRequset()->parse();
 
