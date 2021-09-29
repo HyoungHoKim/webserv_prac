@@ -213,6 +213,7 @@ void Server::run(void)
 
 bool Server::readClient(Client *cl, int data_len)
 {
+<<<<<<< HEAD
     if (cl == NULL)
         return (false);
 
@@ -276,6 +277,41 @@ bool Server::readClient(Client *cl, int data_len)
         return (true);
     }
     return (true);
+=======
+	if (cl == NULL)
+		return (false);
+	
+	if (data_len <= 0)
+		data_len = 1400;
+	
+	char *pData = new char[data_len + 1];
+	bzero(pData, data_len + 1);
+
+	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
+	cl->recvRequestData(pData);
+	delete[] pData;
+	int status = cl->getRequset()->parse();
+
+	if (lenRecv <= 0)
+		return (false);
+
+	if (status == Status(BAD_REQUEST))
+	{
+		std::cout << "[" << cl->getClientIP() << "] There was an error processing there request type: " 
+			<< cl->getRequset()->methodIntToStr(cl->getRequset()->getMethod()) << std::endl;
+		sendStatusResponse(cl, Status(BAD_REQUEST), cl->getRequset()->getParseError());
+		cl->deleteRequest();
+		return (true);
+	}
+	else if (status == Parsing(COMPLETE))
+	{
+		handleRequest(cl, cl->getRequset());
+		cl->getRequset()->printData();
+		cl->deleteRequest();
+		return (true);
+	}
+	return (true);
+>>>>>>> abd6c5c660630e3e2e26668d02dd63c48a6c6b4e
 }
 
 bool Server::writeClient(Client *cl, int avail_bytes)

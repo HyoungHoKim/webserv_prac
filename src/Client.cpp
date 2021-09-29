@@ -20,10 +20,7 @@ void Client::recvRequestData(char *buf)
 	if (!req)
 		this->req = new HTTPRequest(reinterpret_cast<byte*>(buf), strlen(buf));
 	else
-	{
-		this->req->putBytes(reinterpret_cast<byte*>(buf), strlen(buf));
-		//this->req->printData();
-	}
+		this->req->putString(reinterpret_cast<byte*>(buf), strlen(buf));
 }
 
 void Client::deleteRequest()

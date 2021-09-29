@@ -205,6 +205,15 @@ void ByteBuffer::put(byte b, unsigned int index)
 	insert<byte>(b, index);
 }
 
+void ByteBuffer::putString(byte *b, unsigned int len)
+{
+	if (size() < (wpos + len))
+		buf.resize(wpos + len);
+	memcpy(&buf[wpos], reinterpret_cast<byte*>(b), len);
+
+	wpos += len;
+}
+
 void ByteBuffer::putBytes(byte *b, unsigned int len)
 {
 	for (unsigned int i = 0; i < len; i++)

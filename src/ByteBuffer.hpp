@@ -116,6 +116,7 @@ public:
 	void putBytes(byte *b, unsigned int len, unsigned int index);
 	void putChar(char value);
 	void putChar(char value, unsigned int index);
+	void putString(byte *b, unsigned int len);
 	void putDouble(double value);
 	void putDouble(double value, unsigned int index);
 	void putFloat(float value);
