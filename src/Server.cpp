@@ -228,7 +228,6 @@ bool Server::readClient(Client *cl, int data_len)
 
 	if (lenRecv <= 0)
 		return (false);
-
 	if (status == Status(BAD_REQUEST))
 	{
 		std::cout << "[" << cl->getClientIP() << "] There was an error processing there request type: " 
@@ -413,11 +412,77 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
 	}
 }
 
+void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
+{
+	std::string			header;
+	std::string			key;
+	std::string			value;
+	//yte*				byte;
+	size_t				pos;
+
+	std::ifstream in("test/temp.txt");
+	std::string body;
+
+	if (in.is_open())
+	{
+		in.seekg(0, std::ios::end);
+		int size = in.tellg();
+		body.resize(size);
+		in.seekg(0, std::ios::beg);
+		in.read(&body[0], size);
+	}
+	else
+		std::cout << "Cannot find file" << std::endl;	
+	pos = body.find("\r\n\r\n");
+	header = body.substr(0, pos);
+	body = body.substr(pos + 1, body.size());
+	if ((pos = header.find("Status")) != std::string::npos)
+	{
+		while (header[pos] != '\r')
+			pos++;
+	}
+	while (header[pos] == '\r' || header[pos] == '\n')
+		pos++;
+	header = header.substr(pos, header.size());
+	pos = 0;
+	while (header[pos])
+	{
+		while (header[pos] && header[pos] != ':')
+		{
+			key += header[pos];
+			pos++;
+		}
+		if (header[pos] == ':')
+			pos += 2;
+		while (header[pos] && header[pos] != '\r')
+		{
+			value += header[pos];
+			pos++;
+		}
+		resp->addHeader(key, value);
+		key.clear();
+		value.clear();
+		if (header[pos] == '\r')
+			pos++;
+		if (header[pos] == '\n')
+			pos++;
+	}
+	pos = 0;
+	std::stringstream temp1;
+	while (body[pos] == '\r' || body[pos] == '\n')
+		pos++;
+	body = body.substr(pos, body.length());
+	req->putString(reinterpret_cast<unsigned char*>(&body[0]), body.length());
+}
+
 void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 {
 	std::cout << "POST Method processing" << std::endl;
 	std::string uri = req->getRequestUri();
 	Resource *r = resHost->getResource(uri);
+	HTTPResponse *resp = new HTTPResponse();
+	//if (isCGI == true)
+		parseCGI(req, resp);
 
 	// 파일이 존재하지 않을 시
 	if (!r)
@@ -427,7 +492,6 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 		std::ofstream fout(path);
 		fout << req->getData();
 
-		HTTPResponse *resp = new HTTPResponse();
 		resp->setStatus(Status(CREATE));
 		resp->addHeader("Location",uri);
 		
@@ -448,7 +512,6 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 		delete r;
 		r = NULL;
 		r = resHost->getResource(uri);
-		HTTPResponse *resp = new HTTPResponse();
 		resp->setStatus(Status(OK));
 		resp->addHeader("Content-Type", r->getMimeType());
 		resp->addHeader("Content-Length", r->getSize());
