@@ -24,22 +24,23 @@
 #include "Config.hpp"
 
 #define INVALID_SOCKET -1
-#define QSIZE 1024 // 
+#define QSIZE 1024 //
 
 class Server
 {
 private:
-	ServerConfig serv_config;
-	int serv_sock;
-	int serv_port;
-	struct sockaddr_in serv_adr;
-	struct timespec kqTimeout;
-	int kq;
-	struct kevent event_list[QSIZE];
+    ServerConfig serv_config;
+    int serv_sock;
+    int serv_port;
+    struct sockaddr_in serv_adr;
+    struct timespec kqTimeout;
+    int kq;
+    struct kevent event_list[QSIZE];
 
-	std::map<int, Client*> clientMap;
+    std::map<int, Client *> clientMap;
 
-	ResourceHost *resHost;
+    bool isCgi;
+    ResourceHost *resHost;
 
 public:
 	Server(ServerConfig &_sc);
@@ -63,7 +64,8 @@ public:
 	
 	bool readClient(Client *cl, int data_len);
 	bool writeClient(Client *cl, int avail_bytes);
-
+    void executeCgi(Client *cl, HTTPRequest *req);
+    char **setEnv(Client *cl, HTTPRequest *req);
 	bool check_allowed_methods(HTTPRequest *req, int &idx);
 	void handleRequest(Client *cl, HTTPRequest *req);
 	void handleGet(Client *cl, HTTPRequest *req, size_t maxBody = 0);
@@ -78,4 +80,4 @@ public:
 
 bool exit_with_perror(const std::string &msg);
 
-#endif 
+#endif
