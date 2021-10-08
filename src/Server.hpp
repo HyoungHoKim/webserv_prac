@@ -72,6 +72,9 @@ public:
     void handlePut(Client *cl, HTTPRequest *req, size_t maxBody = 0);
     void handleDelete(Client *cl, HTTPRequest *Req, size_t maxBody = 0);
 
+    void executeCgi(Client *cl, HTTPRequest *req);
+    char **setEnv(Client *cl, HTTPRequest *req);
+
     void sendStatusResponse(Client *cl, int status, std::string msg = "");
     void sendResponse(Client *cl, HTTPResponse *resp, bool disconnect, size_t maxBody = 0);
 };

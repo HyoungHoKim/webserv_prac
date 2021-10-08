@@ -458,10 +458,11 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
     std::string uri = req->getRequestUri();
     Resource *r = resHost->getResource(uri);
 
+    std::cout << "url : " << uri << std::endl;
+
     if (this->isCgi)
     {
-        // cgi 실행
-        std::cout << "hi cgi" << std::endl;
+        executeCgi(cl, req);
     }
     // 파일이 존재하지 않을 시
     if (!r)
@@ -653,6 +654,80 @@ void Server::sendResponse(Client *cl, HTTPResponse *resp, bool disconnect, size_
         sendStatusResponse(cl, Status(REQUEST_ENTITY_TOO_LARGE));
     else
         cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));
+}
+
+void Server::executeCgi(Client *cl, HTTPRequest *req)
+{
+    int fd[2];
+    int pid;
+    int res;
+    char **argv = NULL;
+    char **env = NULL;
+    // std::string path = "./cgi-bin/cgi_tester";
+    // std::string path2 = ".";
+
+    res = pipe(fd);
+    argv = (char **)malloc(sizeof(char *) * 3);
+    // argv[0] = strdup(path.c_str());
+    // argv[1] = strdup(path2.c_str());
+    // argv[2] = 0;
+    env = setEnv(cl, req);
+    pid = fork();
+    if (pid == 0)
+    {
+        close(fd[0]);
+        dup2(fd[1], 1);
+        execve("./cgi-bin/cgi_tester", argv, env);
+    }
+    else
+    {
+        close(fd[1]);
+        dup2(fd[0], 0);
+        free(argv);
+        // int i = -1;
+        // while (env[i])
+        // {
+        // }
+        free(env);
+    }
+}
+
+char **Server::setEnv(Client *cl, HTTPRequest *req)
+{
+    std::map<std::string, std::string> cgienv;
+    char **env = NULL;
+
+    cl = 0;
+    // cgienv["AUTH_TYPE"] = "없어도됨";
+    cgienv["CONTENT_LENGTH"] = req->getDataLength();
+    cgienv["CONTENT_TYPE"] = "text/html";
+    // cgienv["GATEWAY_INTERFACE"] = "없어도됌";
+    cgienv["HTTP_ACCEPT"] = "";
+    cgienv["HTTP_USER_AGENT"] = 1;
+    cgienv["PATH_INFO"] = 1;
+    cgienv["PATH_TRANSLATED"] = 1;
+    cgienv["QUERY_STRING"] = 1;
+    cgienv["REMOTE_ADDR"] = 1;
+    cgienv["REMOTE_HOST"] = 1;
+    cgienv["REMOTE_IDENT"] = "?";
+    cgienv["REMOTE_USER"] = "?";
+    cgienv["REQUEST_METHOD"] = "POST";
+    cgienv["SCRIPT_NAME"] = "/cgi-bin/ping.sh";
+    cgienv["SERVER_NAME"] = "webserv";
+    cgienv["SERVER_PORT"] = this->serv_port;
+    cgienv["SERVER_PROTOCOL"] = req->getVersion();
+    cgienv["SERVER_SOFTWARE"] = "webserv 0.0.1";
+    env = (char **)malloc(sizeof(char *) * (cgienv.size() + 1));
+    std::map<std::string, std::string>::iterator it = cgienv.begin();
+    int i = 0;
+    while (it != cgienv.end())
+    {
+        env[i] = strdup((it->first + "=" + it->second).c_str());
+        i++;
+        it++;
+    }
+    env[i] = NULL;
+    return (0);
 }
 
 bool exit_with_perror(const std::string &msg)
