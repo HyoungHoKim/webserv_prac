@@ -171,11 +171,7 @@ public:
 			for (int i = 0; i < (int)size(); i++)
 			{
 				if (buf[i] == 13 || buf[i] == 10)
-				{
 					std::cout << "/" << (int)buf[i];
-					if (buf[i] == 10)
-						std::cout << "\n";
-				}
 				else
 					std::cout << buf[i];
 			}
