@@ -128,6 +128,24 @@ void ByteBuffer::getBytes(byte *buf, unsigned int len)
 		buf[i] = read<byte>();
 }
 
+int ByteBuffer::getDataByString(std::string& body, size_t len)
+{
+	std::string temp;
+
+	if (len > size())
+	{
+		temp.assign(buf.begin(), buf.end());
+		rpos = size();
+	}
+	else
+	{
+		temp.assign(buf.begin(), buf.begin() + len);
+		rpos += len;
+	}
+	body += temp;
+	return (temp.length());
+}
+
 char ByteBuffer::getChar()
 {
 	return (read<char>());
@@ -187,6 +205,8 @@ short ByteBuffer::getShort(unsigned int index)
 {
 	return (read<short>(index));
 }
+
+
 
 void ByteBuffer::put(ByteBuffer *src)
 {

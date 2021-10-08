@@ -419,12 +419,21 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 	std::string uri = req->getRequestUri();
 	Resource *r = resHost->getResource(uri);
 
+	std::string cgiUri = resHost->getBaseDiskPath() + req->getRequestUri();
+	std::cout << "cgiUrl : " << cgiUri << std::endl; 
+
 	// 파일이 존재하지 않을 시
 	if (!r)
 	{
 		std::string path = resHost->getBaseDiskPath() + uri;
 		// 생성 후 데이터 입력
 		std::ofstream fout(path);
+		if (!fout)
+		{
+			std::cout << "[" << cl->getClientIP() << "] " << "Cannot Create Dir: " << path << std::endl;
+			sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
+			return ;
+		}
 		fout << req->getData();
 
 		HTTPResponse *resp = new HTTPResponse();
@@ -483,6 +492,12 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
 	else
 		path = r->getLocation();
 	std::ofstream fout(path);
+	if (!fout)
+	{
+		std::cout << "[" << cl->getClientIP() << "] " << "Cannot Create Dir: " << path << std::endl;
+		sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
+		return ;	
+	}
 	fout << req->getData();
 
 	HTTPResponse *resp = new HTTPResponse();
