@@ -505,12 +505,10 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
 	resp->addHeader("Location", path);
 	if (!r)
 		resp->addHeader("Content-Length", "0");
-	
 	bool dc = false;
 	std::string connection_val = req->getHeaderValue("Connection");
 	if (connection_val.compare("close") == 0)
 		dc = true;
-	
 	sendResponse(cl, resp, dc, maxBody);
 	if (resp->getData())
 		delete resp->getData();

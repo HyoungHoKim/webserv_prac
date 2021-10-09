@@ -79,7 +79,7 @@ protected:
 
 	// Message Body data (Resource in the case of a response, extra parameters in the case of a request)
 	byte* data;
-	unsigned int dataLen;
+	size_t dataLen;
 
 	virtual void init();
 
@@ -107,7 +107,6 @@ public:
 	int parseBody_contentLen();
 	int parseBody_chunked();
 	int chunkBody_process();
-	void SaveChunkedBody(std::string& body);
 	bool checkEnd_chunkBody()
 ;
 	void addHeader(std::string line);

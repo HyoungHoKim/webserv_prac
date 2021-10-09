@@ -128,22 +128,60 @@ void ByteBuffer::getBytes(byte *buf, unsigned int len)
 		buf[i] = read<byte>();
 }
 
-int ByteBuffer::getDataByString(std::string& body, size_t len)
+int ByteBuffer::getDataByString(byte** data, size_t& dataLen, size_t len)
 {
-	std::string temp;
-
 	if (len > size())
 	{
-		temp.assign(buf.begin(), buf.end());
+		if (!(*data))
+		{
+			*data = new byte[size() + 1];
+			bzero(*data, size() + 1);
+			memcpy(*data, &(this->buf[0]), size());
+			//std::copy(buf.begin(), buf.end(), *data);
+			dataLen = size();
+		}
+		else
+		{
+			int totalSize = dataLen + size() + 1;
+			byte *temp = *data;
+			*data = new byte[totalSize];
+			bzero(*data, totalSize);
+			memcpy(*data, temp, dataLen);
+			memcpy(*data + dataLen, &(this->buf[0]), size());
+			//std::copy(buf.begin(), buf.end(), *data + dataLen);
+			dataLen = totalSize - 1;
+			if (temp)
+				delete temp;
+		}
 		rpos = size();
+		return (size());
 	}
 	else
 	{
-		temp.assign(buf.begin(), buf.begin() + len);
+		if (!(*data))
+		{
+			*data = new byte[len + 1];
+			bzero(*data, len + 1);
+			memcpy(*data, &(this->buf[0]), len);
+			//std::copy(buf.begin(), buf.begin() + len, *data);
+			dataLen = len;
+		}
+		else
+		{
+			int totalSize = dataLen + len + 1;
+			byte *temp = *data;
+			*data = new byte[totalSize];
+			bzero(*data, totalSize);
+			memcpy(*data, temp, dataLen);
+			memcpy(*data + dataLen, &(this->buf[0]), len);
+			//std::copy(buf.begin(), buf.begin() + len, *data + dataLen);
+			dataLen = totalSize - 1;
+			if (temp)
+				delete temp;
+		}
 		rpos += len;
+		return (len);
 	}
-	body += temp;
-	return (temp.length());
 }
 
 char ByteBuffer::getChar()
