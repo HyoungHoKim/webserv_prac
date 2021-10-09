@@ -170,7 +170,7 @@ public:
 			std::cout << "-------- read Request --------" << std::endl;
 			for (int i = 0; i < (int)size(); i++)
 			{
-				if (buf[i] == 13 || buf[i] == 10)
+				if (buf[i] == 13 || buf[i] == 10 || buf[i] == 48)
 					std::cout << "/" << (int)buf[i];
 				else
 					std::cout << buf[i];

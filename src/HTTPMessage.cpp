@@ -34,6 +34,7 @@ void HTTPMessage::init()
 	this->isChunked = false;
 	this->chunked_status = false;
 	this->chunk_size = -1;
+	this->chunkBodyRead_size = 0;
 
 	this->version = DEFAULT_HPP_VERSION;
 
@@ -66,6 +67,7 @@ std::string HTTPMessage::getLine()
 	bool newLineReached = false;
 	char c = 0;
 
+	//std::cout << "getLine buf size : " << size() << ", startPos : " << startPos << std::endl;
 	for (unsigned int i = startPos; i < size(); i++)
 	{
 		c = peek();
@@ -81,6 +83,7 @@ std::string HTTPMessage::getLine()
 			setReadPos(getReadPos() - 1);
 		}
 		ret += getChar();
+		//std::cout << "Ret : " << ret << std::endl;
 	}
 	if (!newLineReached)
 	{
@@ -213,10 +216,87 @@ int HTTPMessage::parseBody_contentLen()
 	return (Parsing(COMPLETE));
 }
 
+void HTTPMessage::SaveChunkedBody(std::string& body)
+{
+	if (body != "")
+	{
+		if (!this->data)
+		{
+			this->data = new byte[body.length() + 1];
+			bzero(this->data,  body.length() + 1);
+			memcpy(this->data, body.c_str(), body.length());
+			this->dataLen = body.length();
+		}
+		else
+		{
+			int totalSize = this->dataLen + body.length() + 1;
+			byte *temp = this->data;
+			this->data = new byte[totalSize];
+			bzero(this->data, totalSize);
+			memcpy(this->data, temp, this->dataLen);
+			memcpy(this->data + this->dataLen, body.c_str(), body.length());
+			this->dataLen = totalSize - 1;
+			if (temp)
+				delete temp;
+		}
+		body = "";
+	}
+}
+
+bool HTTPMessage::checkEnd_chunkBody()
+{
+	char c = peek();
+	if (c == 13)
+	{
+		c = get();
+		if (peek() == 10)
+		{
+			get();
+			erase(0, getReadPos());
+			return true;
+		}
+	}
+	return false;
+}
+
+int HTTPMessage::chunkBody_process()
+{
+	std::string body = "";
+
+	if (chunk_size == 0)
+	{
+		if (checkEnd_chunkBody())
+			return (Parsing(COMPLETE));
+		else
+		{
+			setReadPos(getReadPos() - 1);
+			return (Parsing(CHUNK));
+		}
+	}
+	else if (this->chunk_size >= this->chunkBodyRead_size)
+	{
+		int len = getDataByString(body, this->chunk_size - this->chunkBodyRead_size);
+		this->chunkBodyRead_size += len;
+		erase(0, getReadPos());
+		SaveChunkedBody(body);
+		std::cout << "chunk_size : " << this->chunk_size << ", chunkBodyRead_size : " << this->chunkBodyRead_size << ", dataLen : " << this->dataLen << std::endl;
+		if (this->chunk_size == this->chunkBodyRead_size)
+		{
+			if (size() >= 2 && checkEnd_chunkBody())
+			{
+				this->chunked_status = false;
+				this->chunkBodyRead_size = 0;
+			}
+			else
+				return (Parsing(CHUNK));
+		}
+	}
+	return (0);
+}
+
 int HTTPMessage::parseBody_chunked()
 {
 	std::string line = "";
-	std::string body = "";
 
 	while (size() > 0)
 	{
@@ -224,7 +304,7 @@ int HTTPMessage::parseBody_chunked()
 		if (!this->chunked_status)
 		{
 			if ((line = getLine()) == "")
-				return (CHUNK);
+				break;
 			if (line[0] == '0' && line[1] == 'x')
 				this->chunk_size = static_cast<int>(std::strtol(line.c_str(), NULL, 0));
 			else
@@ -234,64 +314,9 @@ int HTTPMessage::parseBody_chunked()
 		}
 		else
 		{
-			if (this->chunk_size > 0)
-			{
-				int len = getDataByString(body, this->chunk_size);
-				std::cout << "--------------------------" << std::endl;
-				std::cout << "chunk_size : " << this->chunk_size << std::endl;
-				std::cout << "buf_size : " << size() << std::endl;
-				std::cout << "len : " << len << std::endl;
-				std::cout << "getReadPos : " << getReadPos() << std::endl;
-				this->chunk_size -= len;
-				erase(0, getReadPos());
-				std::cout << "After chunk_size : " << this->chunk_size << std::endl;
-				std::cout << "After buf_size : " << size() << std::endl;
-				std::cout << "--------------------------" << std::endl;
-				if (body != "")
-				{
-					if (!this->data)
-					{
-						this->data = new byte[body.length() + 1];
-						bzero(this->data,  body.length() + 1);
-						memcpy(this->data, body.c_str(), body.length());
-						this->dataLen = body.length();
-					}
-					else
-					{
-						int totalSize = this->dataLen + body.length() + 1;
-						byte *temp = this->data;
-						this->data = new byte[totalSize];
-						bzero(this->data, totalSize);
-						memcpy(this->data, temp, this->dataLen);
-						memcpy(this->data + this->dataLen, body.c_str(), body.length());
-						this->dataLen = totalSize - 1;
-						if (temp)
-							delete temp;
-					}
-				}
-				if (this->chunk_size == 0)
-				{
-					this->chunked_status = false;
-					break;
-				}
-			}
-			else if (chunk_size == 0)
-			{
-				char c = peek();
-				if (c == 13)
-				{
-					c = get();
-					if (peek() == 10)
-					{
-						get();
-						erase(0, getReadPos());
-						std::cout << size() << std::endl;
-						return (Parsing(COMPLETE));
-					}
-					setReadPos(getReadPos() - 1);
-				}
-				break;
-			}
+			int status;
+			if ((status = chunkBody_process()) != 0)
+				return (status);
 		}
 	}	
 	return (Parsing(CHUNK));

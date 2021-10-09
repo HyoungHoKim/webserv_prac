@@ -68,6 +68,11 @@ class HTTPMessage : public ByteBuffer
 private:
 	std::map<std::string, std::string> *headers;
 
+	bool isChunked;
+	bool chunked_status; // false : data size, true : data
+	int chunk_size;
+	int chunkBodyRead_size;
+
 protected:
 	std::string parseErrorStr;
 	std::string version;
@@ -75,9 +80,6 @@ protected:
 	// Message Body data (Resource in the case of a response, extra parameters in the case of a request)
 	byte* data;
 	unsigned int dataLen;
-	bool isChunked;
-	bool chunked_status; // false : data size, true : data
-	int chunk_size;
 
 	virtual void init();
 
@@ -104,7 +106,10 @@ public:
 	int checkChunked();
 	int parseBody_contentLen();
 	int parseBody_chunked();
-
+	int chunkBody_process();
+	void SaveChunkedBody(std::string& body);
+	bool checkEnd_chunkBody()
+;
 	void addHeader(std::string line);
 	void addHeader(std::string key, std::string value);
 	void addHeader(std::string key, int value);
