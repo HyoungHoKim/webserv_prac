@@ -213,80 +213,80 @@ void Server::run(void)
 
 bool Server::readClient(Client *cl, int data_len)
 {
-	if (cl == NULL)
-		return (false);
-	
-	if (data_len <= 0)
-		data_len = 1400;
-	
-	char *pData = new char[data_len + 1];
-	bzero(pData, data_len + 1);
+    if (cl == NULL)
+        return (false);
 
-	ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
-	cl->recvRequestData(pData);
-	delete[] pData;
-	int status = cl->getRequset()->parse();
+    if (data_len <= 0)
+        data_len = 1400;
 
-	if (lenRecv <= 0)
-		return (false);
-	if (status == Status(BAD_REQUEST))
-	{
-		std::cout << "[" << cl->getClientIP() << "] There was an error processing there request type: " 
-			<< cl->getRequset()->methodIntToStr(cl->getRequset()->getMethod()) << std::endl;
-		sendStatusResponse(cl, Status(BAD_REQUEST), cl->getRequset()->getParseError());
-		cl->deleteRequest();
-		return (true);
-	}
-	else if (status == Parsing(COMPLETE))
-	{
-		handleRequest(cl, cl->getRequset());
-		cl->getRequset()->printData();
-		cl->deleteRequest();
-		return (true);
-	}
-	return (true);
+    char *pData = new char[data_len + 1];
+    bzero(pData, data_len + 1);
+
+    ssize_t lenRecv = recv(cl->getSocket(), pData, data_len, 0);
+    cl->recvRequestData(pData);
+    delete[] pData;
+    int status = cl->getRequset()->parse();
+
+    if (lenRecv <= 0)
+        return (false);
+    if (status == Status(BAD_REQUEST))
+    {
+        std::cout << "[" << cl->getClientIP() << "] There was an error processing there request type: "
+                  << cl->getRequset()->methodIntToStr(cl->getRequset()->getMethod()) << std::endl;
+        sendStatusResponse(cl, Status(BAD_REQUEST), cl->getRequset()->getParseError());
+        cl->deleteRequest();
+        return (true);
+    }
+    else if (status == Parsing(COMPLETE))
+    {
+        handleRequest(cl, cl->getRequset());
+        cl->getRequset()->printData();
+        cl->deleteRequest();
+        return (true);
+    }
+    return (true);
 }
 
 bool Server::writeClient(Client *cl, int avail_bytes)
 {
-	//std::cout << "writeClient" << std::endl;
-	if (cl == NULL)
-		return (false);
-	
- 	int actual_sent = 0;
-	int attempt_sent = 0;
-	int remaining = 0;
-	bool disconnect = false;
-	byte *pData = NULL;
- 
-	if (avail_bytes > 1300)
-		avail_bytes = 1300;
-	else if (avail_bytes == 0)
-		avail_bytes = 64;
+    //std::cout << "writeClient" << std::endl;
+    if (cl == NULL)
+        return (false);
 
-	SendQueueItem *item = cl->nextInSendQueue();
-	if (item == NULL)
-		return (false);
-	pData = item->getData();
-	remaining = item->getSize() - item->getOffset();
-	disconnect = item->getDisconnect();
+    int actual_sent = 0;
+    int attempt_sent = 0;
+    int remaining = 0;
+    bool disconnect = false;
+    byte *pData = NULL;
 
-	if (avail_bytes >= remaining)
-		attempt_sent = remaining;
-	else 
-		attempt_sent = avail_bytes;
+    if (avail_bytes > 1300)
+        avail_bytes = 1300;
+    else if (avail_bytes == 0)
+        avail_bytes = 64;
 
-	actual_sent = send(cl->getSocket(), pData + (item->getOffset()), attempt_sent, 0);
-	if (actual_sent >= 0)
-		item->setOffset(item->getOffset() + actual_sent);
+    SendQueueItem *item = cl->nextInSendQueue();
+    if (item == NULL)
+        return (false);
+    pData = item->getData();
+    remaining = item->getSize() - item->getOffset();
+    disconnect = item->getDisconnect();
 
-	if (item->getOffset() >= item->getSize())
-		cl->dequeueFromSendQueue();
-	
-	if (disconnect || actual_sent <= 0)
-		disconnected_client(cl);
-	
-	return (true);
+    if (avail_bytes >= remaining)
+        attempt_sent = remaining;
+    else
+        attempt_sent = avail_bytes;
+
+    actual_sent = send(cl->getSocket(), pData + (item->getOffset()), attempt_sent, 0);
+    if (actual_sent >= 0)
+        item->setOffset(item->getOffset() + actual_sent);
+
+    if (item->getOffset() >= item->getSize())
+        cl->dequeueFromSendQueue();
+
+    if (disconnect || actual_sent <= 0)
+        disconnected_client(cl);
+
+    return (true);
 }
 
 // 여기 수정
@@ -415,160 +415,160 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
 
 void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
 {
-	std::string			header;
-	std::string			key;
-	std::string			value;
-	//yte*				byte;
-	size_t				pos;
+    std::string header;
+    std::string key;
+    std::string value;
+    //yte*				byte;
+    size_t pos;
 
-	std::ifstream in("./cgi-bin/tmp");
-	std::string body;
+    std::ifstream in("./cgi-bin/tmp");
+    std::string body;
 
-	if (in.is_open())
-	{
-		in.seekg(0, std::ios::end);
-		int size = in.tellg();
-		body.resize(size);
-		in.seekg(0, std::ios::beg);
-		in.read(&body[0], size);
-	}
-	else
-		std::cout << "Cannot find file" << std::endl;	
-	pos = body.find("\r\n\r\n");
-	header = body.substr(0, pos);
-	body = body.substr(pos + 1, body.size());
-	if ((pos = header.find("Status")) != std::string::npos)
-	{
-		while (header[pos] != '\r')
-			pos++;
-	}
-	while (header[pos] == '\r' || header[pos] == '\n')
-		pos++;
-	header = header.substr(pos, header.size());
-	pos = 0;
-	while (header[pos])
-	{
-		while (header[pos] && header[pos] != ':')
-		{
-			key += header[pos];
-			pos++;
-		}
-		if (header[pos] == ':')
-			pos += 2;
-		while (header[pos] && header[pos] != '\r')
-		{
-			value += header[pos];
-			pos++;
-		}
-		resp->addHeader(key, value);
-		key.clear();
-		value.clear();
-		if (header[pos] == '\r')
-			pos++;
-		if (header[pos] == '\n')
-			pos++;
-	}
-	pos = 0;
-	std::stringstream temp1;
-	while (body[pos] == '\r' || body[pos] == '\n')
-		pos++;
-	body = body.substr(pos, body.length());
-	req->putString(reinterpret_cast<unsigned char*>(&body[0]), body.length());
+    if (in.is_open())
+    {
+        in.seekg(0, std::ios::end);
+        int size = in.tellg();
+        body.resize(size);
+        in.seekg(0, std::ios::beg);
+        in.read(&body[0], size);
+    }
+    else
+        std::cout << "Cannot find file" << std::endl;
+    pos = body.find("\r\n\r\n");
+    header = body.substr(0, pos);
+    body = body.substr(pos + 1, body.size());
+    if ((pos = header.find("Status")) != std::string::npos)
+    {
+        while (header[pos] != '\r')
+            pos++;
+    }
+    while (header[pos] == '\r' || header[pos] == '\n')
+        pos++;
+    header = header.substr(pos, header.size());
+    pos = 0;
+    while (header[pos])
+    {
+        while (header[pos] && header[pos] != ':')
+        {
+            key += header[pos];
+            pos++;
+        }
+        if (header[pos] == ':')
+            pos += 2;
+        while (header[pos] && header[pos] != '\r')
+        {
+            value += header[pos];
+            pos++;
+        }
+        resp->addHeader(key, value);
+        key.clear();
+        value.clear();
+        if (header[pos] == '\r')
+            pos++;
+        if (header[pos] == '\n')
+            pos++;
+    }
+    pos = 0;
+    std::stringstream temp1;
+    while (body[pos] == '\r' || body[pos] == '\n')
+        pos++;
+    body = body.substr(pos, body.length());
+    req->putString(reinterpret_cast<unsigned char *>(&body[0]), body.length());
 }
 
 void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 {
-	std::cout << "POST Method processing" << std::endl;
-	std::string uri = req->getRequestUri();
-	Resource *r = resHost->getResource(uri);
-	HTTPResponse *resp = new HTTPResponse();
-	if (isCgi == true)
+    std::cout << "POST Method processing" << std::endl;
+    std::string uri = req->getRequestUri();
+    Resource *r = resHost->getResource(uri);
+    HTTPResponse *resp = new HTTPResponse();
+    if (isCgi == true)
     {
         executeCgi(cl, req);
-		parseCGI(req, resp);
+        parseCGI(req, resp);
     }
 
-	// 파일이 존재하지 않을 시
-	if (!r)
-	{
-		std::string path = resHost->getBaseDiskPath() + uri;
-		// 생성 후 데이터 입력
-		std::ofstream fout(path);
-		fout << req->getData();
+    // 파일이 존재하지 않을 시
+    if (!r)
+    {
+        std::string path = resHost->getBaseDiskPath() + uri;
+        // 생성 후 데이터 입력
+        std::ofstream fout(path);
+        fout << req->getData();
 
-		resp->setStatus(Status(CREATE));
-		resp->addHeader("Location",uri);
-		
-		bool dc = false;
-		std::string connection_val = req->getHeaderValue("Connection");
-		if (connection_val.compare("close") == 0)
-			dc = true;
+        resp->setStatus(Status(CREATE));
+        resp->addHeader("Location", uri);
 
-		sendResponse(cl, resp, dc, maxBody);
-		delete resp;
-		delete r;
-		fout.close();
-	}
-	else
-	{
-		std::ofstream fout(r->getLocation(), std::ios::out | std::ios::app);
-		fout << req->getData();
-		delete r;
-		r = NULL;
-		r = resHost->getResource(uri);
-		resp->setStatus(Status(OK));
-		resp->addHeader("Content-Type", r->getMimeType());
-		resp->addHeader("Content-Length", r->getSize());
-		resp->setData(r->getData(), r->getSize());
-		
-		bool dc = false;
-		std::string connection_val = req->getHeaderValue("Connection");
-		if (connection_val.compare("close") == 0)
-			dc = true;
+        bool dc = false;
+        std::string connection_val = req->getHeaderValue("Connection");
+        if (connection_val.compare("close") == 0)
+            dc = true;
 
-		sendResponse(cl, resp, dc, maxBody);
-		delete resp;
-		delete r;
-		fout.close();
-	}
+        sendResponse(cl, resp, dc, maxBody);
+        delete resp;
+        delete r;
+        fout.close();
+    }
+    else
+    {
+        std::ofstream fout(r->getLocation(), std::ios::out | std::ios::app);
+        fout << req->getData();
+        delete r;
+        r = NULL;
+        r = resHost->getResource(uri);
+        resp->setStatus(Status(OK));
+        resp->addHeader("Content-Type", r->getMimeType());
+        resp->addHeader("Content-Length", r->getSize());
+        resp->setData(r->getData(), r->getSize());
+
+        bool dc = false;
+        std::string connection_val = req->getHeaderValue("Connection");
+        if (connection_val.compare("close") == 0)
+            dc = true;
+
+        sendResponse(cl, resp, dc, maxBody);
+        delete resp;
+        delete r;
+        fout.close();
+    }
 }
 
 void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
 {
-	std::cout << "PUT Method processing" << std::endl;
-	std::string uri = req->getRequestUri();
-	Resource *r = resHost->getResource(uri);
-	int status = Status(NO_CONTENT);
-	std::string path;
+    std::cout << "PUT Method processing" << std::endl;
+    std::string uri = req->getRequestUri();
+    Resource *r = resHost->getResource(uri);
+    int status = Status(NO_CONTENT);
+    std::string path;
 
-	// 파일이 존재하지 않을 시
-	if (!r)
-	{
-		path = resHost->getBaseDiskPath() + uri;
-		status = Status(CREATE);
-	}
-	else
-		path = r->getLocation();
-	std::ofstream fout(path);
-	fout << req->getData();
+    // 파일이 존재하지 않을 시
+    if (!r)
+    {
+        path = resHost->getBaseDiskPath() + uri;
+        status = Status(CREATE);
+    }
+    else
+        path = r->getLocation();
+    std::ofstream fout(path);
+    fout << req->getData();
 
-	HTTPResponse *resp = new HTTPResponse();
-	resp->setStatus(status);
-	resp->addHeader("Location", path);
-	if (!r)
-		resp->addHeader("Content-Length", "0");
-	
-	bool dc = false;
-	std::string connection_val = req->getHeaderValue("Connection");
-	if (connection_val.compare("close") == 0)
-		dc = true;
-	
-	sendResponse(cl, resp, dc, maxBody);
-	if (resp->getData())
-		delete resp->getData();
-	delete resp;
-	delete r;
-	fout.close();
+    HTTPResponse *resp = new HTTPResponse();
+    resp->setStatus(status);
+    resp->addHeader("Location", path);
+    if (!r)
+        resp->addHeader("Content-Length", "0");
+
+    bool dc = false;
+    std::string connection_val = req->getHeaderValue("Connection");
+    if (connection_val.compare("close") == 0)
+        dc = true;
+
+    sendResponse(cl, resp, dc, maxBody);
+    if (resp->getData())
+        delete resp->getData();
+    delete resp;
+    delete r;
+    fout.close();
 }
 
 void Server::handleDelete(Client *cl, HTTPRequest *req, size_t maxBody)
@@ -616,44 +616,44 @@ void Server::handleDelete(Client *cl, HTTPRequest *req, size_t maxBody)
 
 void Server::sendStatusResponse(Client *cl, int status, std::string msg)
 {
-	HTTPResponse *resp = new HTTPResponse();
-	resp->setStatus(Status(status));
-	
-	std::string body = "";
-	if (status == Status(NOT_FOUND))
-	{
-		std::string error_path = this->serv_config.getError();
-		std::ifstream fin(error_path);
-		while (!fin.eof())
-		{
-			std::string str;
-			getline(fin, str);
-			body += str;
-		}
-		fin.close();
-	}
-	else
-	{
-		body = resp->getReason();
-		if (msg.length() > 0)
-			body += ": " + msg;
-	}
+    HTTPResponse *resp = new HTTPResponse();
+    resp->setStatus(Status(status));
 
-	unsigned int slen = body.length();
-	char *sdata = new char[slen];
-	bzero(sdata, slen);
-	strncpy(sdata, body.c_str(), slen);
+    std::string body = "";
+    if (status == Status(NOT_FOUND))
+    {
+        std::string error_path = this->serv_config.getError();
+        std::ifstream fin(error_path);
+        while (!fin.eof())
+        {
+            std::string str;
+            getline(fin, str);
+            body += str;
+        }
+        fin.close();
+    }
+    else
+    {
+        body = resp->getReason();
+        if (msg.length() > 0)
+            body += ": " + msg;
+    }
 
-	resp->addHeader("Content-Type", "text/plain");
-	resp->addHeader("Content-Length", slen);
+    unsigned int slen = body.length();
+    char *sdata = new char[slen];
+    bzero(sdata, slen);
+    strncpy(sdata, body.c_str(), slen);
 
-	if (cl->getRequset()->getMethod() != Method(HEAD))
-		resp->setData((byte*)sdata, slen);
-	
-	sendResponse(cl, resp, false);
-	if (sdata)
-		delete[] sdata;
-	delete resp;
+    resp->addHeader("Content-Type", "text/plain");
+    resp->addHeader("Content-Length", slen);
+
+    if (cl->getRequset()->getMethod() != Method(HEAD))
+        resp->setData((byte *)sdata, slen);
+
+    sendResponse(cl, resp, false);
+    if (sdata)
+        delete[] sdata;
+    delete resp;
 }
 
 void Server::sendResponse(Client *cl, HTTPResponse *resp, bool disconnect, size_t maxBody)
@@ -709,11 +709,11 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
     else
     {
         close(fd[0]);
-        dup2(fd[1], 1);
-        std::cout << req->getData() << std::endl;
+        // dup2(fd[1], 1);
+        write(fd[1], req->getData(), req->getDataLength());
     }
     dup2(0, fd[0]);
-    dup2(1, fd[1]);
+    // dup2(1, fd[1]);
     free(argv);
     // int i = -1;
     // while (env[i])
