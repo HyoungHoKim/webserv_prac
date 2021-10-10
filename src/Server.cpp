@@ -491,7 +491,6 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
     {
         executeCgi(cl, req);
         parseCGI(req, resp);
-		//std::cout << resp->getData() << std::endl;
     }
 
     // 파일이 존재하지 않을 시
@@ -507,6 +506,7 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 			return ;
 		}
         fout << req->getData();
+        fout.close();
 
         resp->setStatus(Status(CREATE));
         resp->addHeader("Location", uri);
@@ -519,19 +519,18 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
         sendResponse(cl, resp, dc, maxBody);
         delete resp;
         delete r;
-        fout.close();
     }
     else
     {
         std::ofstream fout(r->getLocation(), std::ios::out | std::ios::app);
         fout << req->getData();
+        fout.close();
         delete r;
         r = NULL;
         r = resHost->getResource(uri);
         resp->setStatus(Status(OK));
         resp->addHeader("Content-Type", r->getMimeType());
         resp->addHeader("Content-Length", r->getSize());
-        std::cout << "size : " << r->getSize() << std::endl;
         resp->setData(r->getData(), r->getSize());
 
         bool dc = false;
@@ -542,7 +541,6 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
         sendResponse(cl, resp, dc, maxBody);
         delete resp;
         delete r;
-        fout.close();
     }
 }
 
@@ -570,6 +568,7 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
 		return ;	
 	}
     fout << req->getData();
+    fout.close();
 
     HTTPResponse *resp = new HTTPResponse();
     resp->setStatus(status);
@@ -587,7 +586,6 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
         delete resp->getData();
     delete resp;
     delete r;
-    fout.close();
 }
 
 void Server::handleDelete(Client *cl, HTTPRequest *req, size_t maxBody)
