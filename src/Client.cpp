@@ -59,6 +59,7 @@ void Client::dequeueFromSendQueue()
 	{
 		sendQueue.pop();
 		delete item;
+		item = NULL;
 	}
 }
 

@@ -249,7 +249,6 @@ bool Server::readClient(Client *cl, int data_len)
 
 bool Server::writeClient(Client *cl, int avail_bytes)
 {
-    //std::cout << "writeClient" << std::endl;
     if (cl == NULL)
         return (false);
 
@@ -271,7 +270,7 @@ bool Server::writeClient(Client *cl, int avail_bytes)
     remaining = item->getSize() - item->getOffset();
     disconnect = item->getDisconnect();
 
-    if (avail_bytes >= remaining)
+     if (avail_bytes >= remaining)
         attempt_sent = remaining;
     else
         attempt_sent = avail_bytes;
@@ -418,7 +417,6 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
     std::string header;
     std::string key;
     std::string value;
-    //yte*				byte;
     size_t pos;
 
     std::ifstream in("./cgi-bin/tmp");
@@ -477,7 +475,7 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
 	bzero(parseBody, body.length() - pos + 1);
 	memcpy(parseBody, reinterpret_cast<unsigned char*>(&body[pos]), body.length() - pos + 1);
 	byte* temp = req->getData();
-	req->setData(parseBody, body.length() - pos + 1);
+	req->setData(parseBody, body.length() - pos);
 	delete temp;
 }
 
@@ -510,6 +508,8 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 
         resp->setStatus(Status(CREATE));
         resp->addHeader("Location", uri);
+        resp->addHeader("Content-Length", req->getDataLength());
+        std::cout << req->getDataLength() << std::endl;
 
         bool dc = false;
         std::string connection_val = req->getHeaderValue("Connection");

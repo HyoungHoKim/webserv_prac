@@ -108,7 +108,7 @@ byte *HTTPResponse::create()
 	putHeaders();
 
 	if ((data != NULL) && dataLen > 0)
-		putBytes(data, dataLen);
+		putString(data, dataLen);
 	
 	byte *createRetData = new byte[size()];
 	setReadPos(0);
