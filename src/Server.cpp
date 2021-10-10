@@ -469,11 +469,16 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
             pos++;
     }
     pos = 0;
-    std::stringstream temp1;
     while (body[pos] == '\r' || body[pos] == '\n')
-        pos++;
-    body = body.substr(pos, body.length());
-    req->putString(reinterpret_cast<unsigned char *>(&body[0]), body.length());
+	{
+		pos++;
+	}
+	byte* parseBody = new byte[body.length() - pos + 1];
+	bzero(parseBody, body.length() - pos + 1);
+	memcpy(parseBody, reinterpret_cast<unsigned char*>(&body[pos]), body.length() - pos + 1);
+	byte* temp = req->getData();
+	req->setData(parseBody, body.length() - pos + 1);
+	delete temp;
 }
 
 void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
@@ -486,6 +491,7 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
     {
         executeCgi(cl, req);
         parseCGI(req, resp);
+		//std::cout << resp->getData() << std::endl;
     }
 
     // 파일이 존재하지 않을 시
@@ -519,6 +525,7 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
         resp->setStatus(Status(OK));
         resp->addHeader("Content-Type", r->getMimeType());
         resp->addHeader("Content-Length", r->getSize());
+        std::cout << "size : " << r->getSize() << std::endl;
         resp->setData(r->getData(), r->getSize());
 
         bool dc = false;
@@ -705,12 +712,16 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
         dup2(fd[0], 0);
         dup2(tmp_fd, 1);
         execve(path.c_str(), argv, env);
+		exit(0);
     }
     else
     {
         close(fd[0]);
         // dup2(fd[1], 1);
         write(fd[1], req->getData(), req->getDataLength());
+		close(fd[1]);
+
+		waitpid(pid, 0, 0);
     }
     dup2(0, fd[0]);
     // dup2(1, fd[1]);
