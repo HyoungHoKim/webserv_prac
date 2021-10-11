@@ -291,8 +291,8 @@ int HTTPMessage::parseBody_chunked()
 			{ 
 				if (!this->data)
 				{
-					this->data = new byte[this->tempBody.length()];
-					bzero(this->data, this->tempBody.length());
+					this->data = new byte[this->tempBody.length() + 1];
+					bzero(this->data, this->tempBody.length() + 1);
 					memcpy(this->data, this->tempBody.c_str(), this->tempBody.length());
 				}
 				return (Parsing(COMPLETE));

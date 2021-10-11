@@ -113,8 +113,12 @@ public:
 	void addHeader(std::string line);
 	void addHeader(std::string key, std::string value);
 	void addHeader(std::string key, int value);
+	std::map<std::string, std::string>* getHeader() const {
+		return (this->headers);
+	}
 	std::string getHeaderValue(std::string key);
 	std::string getHeaderStr(int index);
+
 	int getNumHeaders();
 	void clearHeaders();
 

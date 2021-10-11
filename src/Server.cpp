@@ -196,7 +196,7 @@ void Server::run(void)
                         disconnected_client(clientMap[curr_event->ident]);
 
                     add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-                    add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
+                    add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);                                               
                 }
                 if (curr_event->filter == EVFILT_WRITE)
                 {
@@ -270,12 +270,19 @@ bool Server::writeClient(Client *cl, int avail_bytes)
     remaining = item->getSize() - item->getOffset();
     disconnect = item->getDisconnect();
 
-     if (avail_bytes >= remaining)
+    if (item->getSize() < 1000000)
+    {
+        std::cout << pData << std::endl;
+        std::cout << strlen((char*)(item->getData())) << std::endl;
+    }
+
+    if (avail_bytes >= remaining)
         attempt_sent = remaining;
     else
         attempt_sent = avail_bytes;
 
     actual_sent = send(cl->getSocket(), pData + (item->getOffset()), attempt_sent, 0);
+
     if (actual_sent >= 0)
         item->setOffset(item->getOffset() + actual_sent);
 
@@ -509,7 +516,9 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
         resp->setStatus(Status(CREATE));
         resp->addHeader("Location", uri);
         resp->addHeader("Content-Length", req->getDataLength());
-        std::cout << req->getDataLength() << std::endl;
+
+        if (this->isCgi)
+            resp->setData(req->getData(), req->getDataLength());
 
         bool dc = false;
         std::string connection_val = req->getHeaderValue("Connection");
@@ -530,8 +539,9 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
         r = resHost->getResource(uri);
         resp->setStatus(Status(OK));
         resp->addHeader("Content-Type", r->getMimeType());
-        resp->addHeader("Content-Length", r->getSize());
-        resp->setData(r->getData(), r->getSize());
+        resp->addHeader("Content-Length", req->getDataLength());
+        std::cout << req->getDataLength() << std::endl;
+        resp->setData(req->getData(), req->getDataLength());
 
         bool dc = false;
         std::string connection_val = req->getHeaderValue("Connection");
@@ -711,7 +721,7 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
     std::string cgiUri = resHost->getBaseDiskPath() + req->getRequestUri();
     argv[1] = strdup(cgiUri.c_str());
     argv[2] = NULL;
-    int tmp_fd = open("./cgi-bin/tmp", O_WRONLY | O_CREAT, 0666);
+    int tmp_fd = open("./cgi-bin/tmp", O_WRONLY | O_TRUNC | O_CREAT, 0666);
     env = setEnv(cl, req);
     res = pipe(fd);
     pid = fork();
@@ -794,13 +804,17 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
     cgienv["WEBTOP_USER"] = "";                              // ex) "?"
     cgienv["NCHOME"] = "";                                   // ex) "?"
 
+    std::map<std::string, std::string>::iterator iter;
+    for (iter = req->getHeader()->begin(); iter != req->getHeader()->end(); iter++)
+        cgienv[iter->first] = iter->second;
+
     env = (char **)malloc(sizeof(char *) * (cgienv.size() + 1));
     std::map<std::string, std::string>::iterator it = cgienv.begin();
     int i = 0;
     while (it != cgienv.end())
     {
         env[i] = strdup((it->first + "=" + it->second).c_str());
-        // std::cout << i << ": " << env[i] << std::endl;
+        std::cout << i << ": " << env[i] << std::endl;
         i++;
         it++;
     }
