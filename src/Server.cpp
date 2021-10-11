@@ -270,12 +270,6 @@ bool Server::writeClient(Client *cl, int avail_bytes)
     remaining = item->getSize() - item->getOffset();
     disconnect = item->getDisconnect();
 
-    if (item->getSize() < 1000000)
-    {
-        std::cout << pData << std::endl;
-        std::cout << strlen((char*)(item->getData())) << std::endl;
-    }
-
     if (avail_bytes >= remaining)
         attempt_sent = remaining;
     else
@@ -425,6 +419,7 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
     std::string key;
     std::string value;
     size_t pos;
+    size_t bodyPos;
 
     std::ifstream in("./cgi-bin/tmp");
     std::string body;
@@ -439,9 +434,10 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
     }
     else
         std::cout << "Cannot find file" << std::endl;
-    pos = body.find("\r\n\r\n");
-    header = body.substr(0, pos);
-    body = body.substr(pos + 1, body.size());
+    bodyPos = body.find("\r\n\r\n");
+    header = body.substr(0, bodyPos);
+    // body = body.substr(pos + 1, body.size());
+    pos = 0;
     if ((pos = header.find("Status")) != std::string::npos)
     {
         while (header[pos] != '\r')
@@ -473,16 +469,13 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
         if (header[pos] == '\n')
             pos++;
     }
-    pos = 0;
-    while (body[pos] == '\r' || body[pos] == '\n')
-	{
-		pos++;
-	}
-	byte* parseBody = new byte[body.length() - pos + 1];
-	bzero(parseBody, body.length() - pos + 1);
-	memcpy(parseBody, reinterpret_cast<unsigned char*>(&body[pos]), body.length() - pos + 1);
+    while (body[bodyPos] == '\r' || body[bodyPos] == '\n')
+		bodyPos++;
+	byte* parseBody = new byte[body.length() - bodyPos + 1];
+	bzero(parseBody, body.length() - bodyPos + 1);
+	memcpy(parseBody, reinterpret_cast<unsigned char*>(&body[bodyPos]), body.length() - bodyPos + 1);
 	byte* temp = req->getData();
-	req->setData(parseBody, body.length() - pos);
+	req->setData(parseBody, body.length() - bodyPos);
 	delete temp;
 }
 
@@ -540,7 +533,6 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
         resp->setStatus(Status(OK));
         resp->addHeader("Content-Type", r->getMimeType());
         resp->addHeader("Content-Length", req->getDataLength());
-        std::cout << req->getDataLength() << std::endl;
         resp->setData(req->getData(), req->getDataLength());
 
         bool dc = false;
@@ -725,7 +717,6 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
     env = setEnv(cl, req);
     res = pipe(fd);
     pid = fork();
-    std::cout << "execute Cgi here2" << std::endl;
     if (pid == 0)
     {
         close(fd[1]);
@@ -744,12 +735,7 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
 		waitpid(pid, 0, 0);
     }
     dup2(0, fd[0]);
-    // dup2(1, fd[1]);
     free(argv);
-    // int i = -1;
-    // while (env[i])
-    // {
-    // }
     free(env);
 }
 
@@ -806,7 +792,7 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
 
     std::map<std::string, std::string>::iterator iter;
     for (iter = req->getHeader()->begin(); iter != req->getHeader()->end(); iter++)
-        cgienv[iter->first] = iter->second;
+        cgienv["HTTP_" + iter->first] = iter->second;
 
     env = (char **)malloc(sizeof(char *) * (cgienv.size() + 1));
     std::map<std::string, std::string>::iterator it = cgienv.begin();
@@ -814,7 +800,6 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
     while (it != cgienv.end())
     {
         env[i] = strdup((it->first + "=" + it->second).c_str());
-        std::cout << i << ": " << env[i] << std::endl;
         i++;
         it++;
     }

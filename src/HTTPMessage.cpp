@@ -251,7 +251,6 @@ int HTTPMessage::chunkBody_process()
 		this->dataLen = this->tempBody.length();
 		this->chunkBodyRead_size += len;
 		erase(0, getReadPos());
-		std::cout << "chunk_size : " << this->chunk_size << ", chunkBodyRead_size : " << this->chunkBodyRead_size << ", dataLen : " << this->dataLen << std::endl;
 		if (this->chunk_size == this->chunkBodyRead_size)
 		{
 			if (size() >= 2 && checkEnd_chunkBody())
