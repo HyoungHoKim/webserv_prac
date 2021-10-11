@@ -95,7 +95,7 @@ public:
 	byte get();
 	byte get(unsigned int index);
 	void getBytes(byte *buf, unsigned int len);
-	int getDataByString(byte** data, size_t& dataLen, size_t len);
+	int getDataToString(std::string& tempBody, size_t len);
 	char getChar();
 	char getChar(unsigned int index);
 	double getDouble();

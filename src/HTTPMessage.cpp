@@ -31,6 +31,7 @@ void HTTPMessage::init()
 
 	this->data = NULL;
 	this->dataLen = 0;
+	this->tempBody = "";
 	this->isChunked = false;
 	this->chunked_status = false;
 	this->chunk_size = -1;
@@ -246,7 +247,8 @@ int HTTPMessage::chunkBody_process()
 	}
 	else if (this->chunk_size >= this->chunkBodyRead_size)
 	{
-		int len = getDataByString(&this->data, this->dataLen, this->chunk_size - this->chunkBodyRead_size);
+		int len = getDataToString(this->tempBody, this->chunk_size - this->chunkBodyRead_size);
+		this->dataLen = this->tempBody.length();
 		this->chunkBodyRead_size += len;
 		erase(0, getReadPos());
 		std::cout << "chunk_size : " << this->chunk_size << ", chunkBodyRead_size : " << this->chunkBodyRead_size << ", dataLen : " << this->dataLen << std::endl;
@@ -284,8 +286,18 @@ int HTTPMessage::parseBody_chunked()
 		}
 		else
 		{
-			int status;
-			if ((status = chunkBody_process()) != 0)
+			int status = chunkBody_process();
+			if (status == Parsing(COMPLETE))
+			{ 
+				if (!this->data)
+				{
+					this->data = new byte[this->tempBody.length()];
+					bzero(this->data, this->tempBody.length());
+					memcpy(this->data, this->tempBody.c_str(), this->tempBody.length());
+				}
+				return (Parsing(COMPLETE));
+			}
+			else if (status == Parsing(CHUNK))
 				return (status);
 		}
 	}	

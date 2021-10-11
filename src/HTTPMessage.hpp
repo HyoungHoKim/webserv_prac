@@ -80,6 +80,7 @@ protected:
 	// Message Body data (Resource in the case of a response, extra parameters in the case of a request)
 	byte* data;
 	size_t dataLen;
+	std::string tempBody;
 
 	virtual void init();
 
