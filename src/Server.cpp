@@ -413,7 +413,7 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
             return;
         }
         executeCgi(cl, req);
-        parseCGI(req, resp, Method(GET));
+        parseCGI(req, resp, Method(GET), cl->getSocket());
     }
 
     if (r != NULL)
@@ -451,7 +451,7 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
     }
 }
 
-void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp, int method)
+void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp, int method, int fd)
 {
     std::string header;
     std::string key;
@@ -459,7 +459,7 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp, int method)
     size_t pos;
     size_t bodyPos;
 
-    std::ifstream in("./cgi-bin/tmp");
+    std::ifstream in(filename[fd]);
     std::string body;
 
     if (in.is_open())
@@ -518,18 +518,20 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp, int method)
             delete temp;
     }
     req->setData(parseBody, body.length() - bodyPos);
+    if (!remove(filename[fd]))
+        postCnt[fd] += 1;
 }
 
 void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
 {
-    std::cout << "POST Method processing" << std::endl;
+    std::cout << "sock_fd: " << ft::itos(cl->getSocket()) + " POST Method processing - cnt: " + ft::itos(postCnt[cl->getSocket()] + 1) << std::endl;
     std::string uri = req->getRequestUri();
     Resource *r = resHost->getResource(uri);
     HTTPResponse *resp = new HTTPResponse();
     if (isCgi == true)
     {
         executeCgi(cl, req);
-        parseCGI(req, resp, Method(POST));
+        parseCGI(req, resp, Method(POST), cl->getSocket());
     }
 
     // 파일이 존재하지 않을 시
@@ -601,7 +603,7 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
     if (isCgi == true)
     {
         executeCgi(cl, req);
-        parseCGI(req, resp, Method(PUT));
+        parseCGI(req, resp, Method(PUT), cl->getSocket());
     }
 
     // 파일이 존재하지 않을 시
@@ -762,14 +764,16 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
     int res;
     char **argv = NULL;
     char **env = NULL;
-    std::cout << "execute Cgi here" << std::endl;
+    std::cout << "execute Cgi start" << std::endl;
     argv = new char *[sizeof(char *) * 3];
     std::string path = "./cgi-bin/cgi_tester";
     argv[0] = strdup(path.c_str());
     std::string cgiUri = resHost->getBaseDiskPath() + req->getRequestUri();
     argv[1] = strdup(cgiUri.c_str());
     argv[2] = NULL;
-    int tmp_fd = open("./cgi-bin/tmp", O_WRONLY | O_TRUNC | O_CREAT, 0666);
+    std::string tmp = "./cgi-bin/tmp";
+    filename[cl->getSocket()] = strdup((tmp + ft::itos(cl->getSocket())).c_str());
+    int tmp_fd = open(filename[cl->getSocket()], O_WRONLY | O_TRUNC | O_CREAT, 0666);
     env = setEnv(cl, req);
     res = pipe(fd);
     pid = fork();
@@ -812,7 +816,7 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
     char **env = NULL;
 
     cgienv["AUTH_TYPE"] = "Basic";
-    cgienv["CONTENT_LENGTH"] = std::to_string(req->getDataLength());
+    cgienv["CONTENT_LENGTH"] = ft::itos(req->getDataLength());
     cgienv["CONTENT_TYPE"] = "text/html";
     cgienv["GATEWAY_INTERFACE"] = "CGI/1.1";
     cgienv["PATH_INFO"] = resHost->getBaseDiskPath() + req->getRequestUri();
@@ -825,11 +829,11 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
     {
         cgienv["REQUEST_METHOD"] = "POST"; // good ex) "GET"
     }
-    cgienv["SERVER_ADDR"] = cl->getClientIP();               // good ex) "127.0.0.1"
-    cgienv["SERVER_NAME"] = cl->getClientIP();               // good ex) "127.0.0.1"
-    cgienv["SERVER_PORT"] = std::to_string(this->serv_port); // good ex) "8000"
-    cgienv["SERVER_PROTOCOL"] = req->getVersion();           // good ex) "HTTP/version"
-    cgienv["SERVER_SOFTWARE"] = "webserv/0.0.1";             // good ex) "name/version"
+    cgienv["SERVER_ADDR"] = cl->getClientIP();         // good ex) "127.0.0.1"
+    cgienv["SERVER_NAME"] = cl->getClientIP();         // good ex) "127.0.0.1"
+    cgienv["SERVER_PORT"] = ft::itos(this->serv_port); // good ex) "8000"
+    cgienv["SERVER_PROTOCOL"] = req->getVersion();     // good ex) "HTTP/version"
+    cgienv["SERVER_SOFTWARE"] = "webserv/0.0.1";       // good ex) "name/version"
 
     std::map<std::string, std::string>::iterator iter;
     for (iter = req->getHeader()->begin(); iter != req->getHeader()->end(); iter++)
