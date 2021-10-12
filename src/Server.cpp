@@ -436,7 +436,6 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
         std::cout << "Cannot find file" << std::endl;
     bodyPos = body.find("\r\n\r\n");
     header = body.substr(0, bodyPos);
-    // body = body.substr(pos + 1, body.size());
     pos = 0;
     if ((pos = header.find("Status")) != std::string::npos)
     {
