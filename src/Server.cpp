@@ -321,6 +321,8 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 {
     int idx = 0;
 
+    // host 
+
     if (!check_allowed_methods(req, idx))
     {
         std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << std::endl;
@@ -329,7 +331,8 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
     }
 
     size_t max_body = this->serv_config.getLocations()[idx].getClientMaxBodySize();
-    if (req->getRequestUri().find(this->serv_config.getLocations()[idx].getCgiExt()) != std::string::npos)
+    if (req->getRequestUri().find(this->serv_config.getLocations()[idx].getCgiExt()) != std::string::npos 
+        && this->serv_config.getLocations()[idx].getCgiExt() != "")
         this->isCgi = true;
 
     if (idx != 0 && this->serv_config.getLocations()[idx].getStatusCode() != 0 && this->serv_config.getLocations()[idx].getRedir() != "")
@@ -390,11 +393,13 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
         {
             std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
             sendStatusResponse(cl, Status(NOT_FOUND));
+            delete resp;
             return ;
         }
         executeCgi(cl, req);
-        parseCGI(req, resp);
+        parseCGI(req, resp, Method(GET));
     }
+
     if (r != NULL)
     {
         if (r->isDirectory())
@@ -418,18 +423,18 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
             dc = true;
 
         sendResponse(cl, resp, dc, maxBody);
+        delete r;
         delete resp;
-        if (!isCgi)
-            delete r;
     }
     else
     {
         std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
         sendStatusResponse(cl, Status(NOT_FOUND));
+        delete resp;
     }
 }
 
-void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
+void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp, int method)
 {
     std::string header;
     std::string key;
@@ -489,9 +494,13 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp)
 	byte* parseBody = new byte[body.length() - bodyPos + 1];
 	bzero(parseBody, body.length() - bodyPos + 1);
 	memcpy(parseBody, reinterpret_cast<unsigned char*>(&body[bodyPos]), body.length() - bodyPos + 1);
-	byte* temp = req->getData();
+    if (method == Method(POST) || method == Method(PUT))
+    {
+        byte* temp = req->getData();
+        if (temp)
+            delete temp;
+    }
 	req->setData(parseBody, body.length() - bodyPos);
-	delete temp;
 }
 
 void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
@@ -503,7 +512,7 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
     if (isCgi == true)
     {
         executeCgi(cl, req);
-        parseCGI(req, resp);
+        parseCGI(req, resp, Method(POST));
     }
 
     // 파일이 존재하지 않을 시
@@ -568,6 +577,13 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
     Resource *r = resHost->getResource(uri);
     int status = Status(NO_CONTENT);
     std::string path;
+    HTTPResponse *resp = new HTTPResponse();
+
+    if (isCgi == true)
+    {
+        executeCgi(cl, req);
+        parseCGI(req, resp, Method(PUT));
+    }
 
     // 파일이 존재하지 않을 시
     if (!r)
@@ -587,7 +603,6 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
     fout << req->getData();
     fout.close();
 
-    HTTPResponse *resp = new HTTPResponse();
     resp->setStatus(status);
     resp->addHeader("Location", path);
     if (!r)
@@ -712,6 +727,8 @@ void Server::sendResponse(Client *cl, HTTPResponse *resp, bool disconnect, size_
         sendStatusResponse(cl, Status(REQUEST_ENTITY_TOO_LARGE));
     else
         cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));
+    if (this->isCgi)
+        this->isCgi = false;
 }
 
 void Server::executeCgi(Client *cl, HTTPRequest *req)
