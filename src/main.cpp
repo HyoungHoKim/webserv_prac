@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 				t_ids.push_back(t_id);
 			}
 
-			for (int i = 1; i < argc; i++)
+			for (size_t i = 0; i < servers.size(); i++)
 				pthread_join(t_ids[i], NULL);
 		}
 	}
