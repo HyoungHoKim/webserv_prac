@@ -729,7 +729,10 @@ void Server::sendResponse(Client *cl, HTTPResponse *resp, bool disconnect, size_
 
     byte *pData = resp->create();
     if (maxBody < resp->getDataLength() && maxBody != 0)
+    {
         sendStatusResponse(cl, Status(REQUEST_ENTITY_TOO_LARGE));
+        delete[] pData;
+    }
     else
         cl->addToSendQueue(new SendQueueItem(pData, resp->size(), disconnect));
     if (this->isCgi)
