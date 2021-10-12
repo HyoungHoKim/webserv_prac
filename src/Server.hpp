@@ -23,9 +23,12 @@
 #include "HTTPResponse.hpp"
 #include "ResourceHost.hpp"
 #include "Config.hpp"
+#include "ServerConfig.hpp"
 
 #define INVALID_SOCKET -1
 #define QSIZE 1024 //
+
+extern std::vector<ServerConfig> g_servers;
 
 class Server
 {

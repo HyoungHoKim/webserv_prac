@@ -2,6 +2,8 @@
 #include "Config.hpp"
 #include <pthread.h>
 
+std::vector<ServerConfig> g_servers;
+
 void *startServer(void *arg)
 {
 	ServerConfig *temp = reinterpret_cast<ServerConfig*>(arg);
@@ -19,14 +21,13 @@ int main(int argc, char *argv[])
 	try
 	{	
 		Config conf;
-		std::vector<ServerConfig> servers;
 		if (argc != 2)
 			exit(1);
 		conf.parseConfig(argv[1]);
-		servers = conf.getServers();
-		if (servers.size() == 1)
+		g_servers = conf.getServers();
+		if (g_servers.size() == 1)
 		{
-			Server server(servers[0]);
+			Server server(g_servers[0]);
 
 			if (!server.init_Server())
 				return (-1);
@@ -37,14 +38,20 @@ int main(int argc, char *argv[])
 		else
 		{
 			std::vector<pthread_t> t_ids;
-			for (size_t i = 0; i < servers.size(); i++)
+			std::map<std::string, bool>	samePort;
+			int					   t_id_size = 0;
+			for (size_t i = 0; i < g_servers.size(); i++)
 			{
 				pthread_t t_id;
-				pthread_create(&t_id, NULL, startServer, reinterpret_cast<void*>(&servers[i]));
-				t_ids.push_back(t_id);
+				if (!samePort[g_servers[i].getListen()])
+				{
+					pthread_create(&t_id, NULL, startServer, reinterpret_cast<void*>(&g_servers[i]));
+					t_ids.push_back(t_id);
+					t_id_size++;
+				}
+				samePort[g_servers[i].getListen()] = true;
 			}
-
-			for (size_t i = 0; i < servers.size(); i++)
+			for (int i = 0; i < t_id_size; i++)
 				pthread_join(t_ids[i], NULL);
 		}
 	}
