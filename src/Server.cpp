@@ -166,7 +166,6 @@ void Server::run(void)
     struct kevent *curr_event;
     while (1)
     {
-        //new_events = kevent(this->kq, NULL, 0, this->event_list, QSIZE, &(this->kqTimeout));
         new_events = kevent(this->kq, NULL, 0, this->event_list, QSIZE, 0);
 
         if (new_events <= 0)
@@ -381,11 +380,23 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
               << " Method processing" << std::endl;
     std::string uri = req->getRequestUri();
     Resource *r = resHost->getResource(uri);
+    HTTPResponse *resp = new HTTPResponse();
 
+    if (isCgi == true)
+    {
+        if (r)
+            req->setData(r->getData(), r->getSize());
+        else
+        {
+            std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
+            sendStatusResponse(cl, Status(NOT_FOUND));
+            return ;
+        }
+        executeCgi(cl, req);
+        parseCGI(req, resp);
+    }
     if (r != NULL)
     {
-        HTTPResponse *resp = new HTTPResponse();
-
         if (r->isDirectory())
             resp->setStatus(Status(NOT_FOUND));
         else
@@ -394,7 +405,12 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
         resp->addHeader("Content-Length", r->getSize());
 
         if (req->getMethod() == Method(GET))
-            resp->setData(r->getData(), r->getSize());
+        {
+            if (!isCgi)
+                resp->setData(r->getData(), r->getSize());
+            else
+                resp->setData(req->getData(), req->getDataLength());
+        }
 
         bool dc = false;
         std::string connection_val = req->getHeaderValue("Connection");
@@ -403,12 +419,12 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
 
         sendResponse(cl, resp, dc, maxBody);
         delete resp;
-        delete r;
+        if (!isCgi)
+            delete r;
     }
     else
     {
-        std::cout << "[" << cl->getClientIP() << "] "
-                  << "File not found: " << uri << std::endl;
+        std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
         sendStatusResponse(cl, Status(NOT_FOUND));
     }
 }
@@ -706,7 +722,7 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
     char **argv = NULL;
     char **env = NULL;
     std::cout << "execute Cgi here" << std::endl;
-    argv = (char **)malloc(sizeof(char *) * 3);
+    argv = new char*[sizeof(char *) * 3];
     std::string path = "./cgi-bin/cgi_tester";
     argv[0] = strdup(path.c_str());
     std::string cgiUri = resHost->getBaseDiskPath() + req->getRequestUri();
@@ -727,7 +743,6 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
     else
     {
         close(fd[0]);
-        // dup2(fd[1], 1);
         write(fd[1], req->getData(), req->getDataLength());
 		close(fd[1]);
 
@@ -743,33 +758,12 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
     std::map<std::string, std::string> cgienv;
     char **env = NULL;
 
-    // resHost->getBaseDiskPath(); // ./www/YoupiBanane
-    // req->getRequestUri();       // /youpi.bla
-    // req->getDataLength();       // 10000000
-    // cl->getClientIP();          // 127.0.0.1
-    // req->getMethod();           // 1: GET, 2: POST
-    // req->getVersion();          // "HTTP/1.1"
-
-    // 예제 http://example.com/cgi-bin/printenv.pl/foo/bar?var1=value1&var2=with%20percent%20encoding
-    cgienv["AUTH_TYPE"] = "";                                        // good 없음 어려운데 필요없음 ex) "???"
-    cgienv["CONTENT_LENGTH"] = std::to_string(req->getDataLength()); // good ex) "10000000"
-    cgienv["CONTENT_TYPE"] = "text/html";                            // good ex) "text/html"
-    cgienv["GATEWAY_INTERFACE"] = "CGI/1.1";                         // good ex) "CGI/version"
-    cgienv["HTTP_ACCEPT"] = "";                                      //
-    cgienv["HTTP_"] = "";                                            //
-    cgienv["HTTP_"] = "";                                            //
-    cgienv["HTTP_"] = "";                                            //
-    cgienv["HTTP_"] = "";                                            //
-    cgienv["HTTP_"] = "";                                            //
-    cgienv["HTTP_"] = "";                                            //
-    cgienv["HTTP_USER_AGENT"] = "";                                  //
-    cgienv["PATH_INFO"] = "/";                                       // good ex) "/foo/bar"
-    cgienv["PATH_TRANSLATED"] = "";                                  // good ex) "C:\Program Files (x86)\Apache Software Foundation\Apache2.4\htdocs\foo\bar"
-    cgienv["QUERY_STRING"] = "";                                     // good query필요할 때 추가할거임 ex) "var1=value1&var2=with%20percent%20encoding"
+    cgienv["AUTH_TYPE"] = "Basic";
+    cgienv["CONTENT_LENGTH"] = std::to_string(req->getDataLength());
+    cgienv["CONTENT_TYPE"] = "text/html";
+    cgienv["GATEWAY_INTERFACE"] = "CGI/1.1";
+    cgienv["PATH_INFO"] = resHost->getBaseDiskPath() + req->getRequestUri();
     cgienv["REMOTE_ADDR"] = cl->getClientIP();                       // good ex) "127.0.0.1"
-    cgienv["REMOTE_HOST"] = "";                                      // good ex) host IP인데, 어떻게 알 턱이 있나.
-    cgienv["REMOTE_IDENT"] = "";                                     // ex) "see ident??"
-    cgienv["REMOTE_USER"] = "";                                      // ex) "사용자가 인증된 경우 이 요청을 작성한 사용자의 로그인을 리턴하고 사용자가 인증되지 않은 경우 널(null)을 리턴합니다."
     if (req->getMethod() == GET)
     {
         cgienv["REQUEST_METHOD"] = "GET"; // good ex) "GET"
@@ -778,22 +772,17 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
     {
         cgienv["REQUEST_METHOD"] = "POST"; // good ex) "GET"
     }
-    cgienv["REQUEST_URI"] = "";                              // ex) "/cgi-bin/printenv.pl/foo/bar?var1=value1&var2=with%20percent%20encoding"
-    cgienv["SCRIPT_NAME"] = "";                              // ex) "/cgi-bin/printenv.pl"
     cgienv["SERVER_ADDR"] = cl->getClientIP();               // good ex) "127.0.0.1"
     cgienv["SERVER_NAME"] = cl->getClientIP();               // good ex) "127.0.0.1"
     cgienv["SERVER_PORT"] = std::to_string(this->serv_port); // good ex) "8000"
     cgienv["SERVER_PROTOCOL"] = req->getVersion();           // good ex) "HTTP/version"
     cgienv["SERVER_SOFTWARE"] = "webserv/0.0.1";             // good ex) "name/version"
-    cgienv["HTTP_COOKIE"] = "";                              // ex) "?"
-    cgienv["WEBTOP_USER"] = "";                              // ex) "?"
-    cgienv["NCHOME"] = "";                                   // ex) "?"
 
     std::map<std::string, std::string>::iterator iter;
     for (iter = req->getHeader()->begin(); iter != req->getHeader()->end(); iter++)
         cgienv["HTTP_" + iter->first] = iter->second;
 
-    env = (char **)malloc(sizeof(char *) * (cgienv.size() + 1));
+    env = new char*[sizeof(char*) * (cgienv.size() + 1)];
     std::map<std::string, std::string>::iterator it = cgienv.begin();
     int i = 0;
     while (it != cgienv.end())
