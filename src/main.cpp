@@ -38,14 +38,20 @@ int main(int argc, char *argv[])
 		else
 		{
 			std::vector<pthread_t> t_ids;
+			std::map<std::string, bool>	samePort;
+			int					   t_id_size = 0;
 			for (size_t i = 0; i < g_servers.size(); i++)
 			{
 				pthread_t t_id;
-				pthread_create(&t_id, NULL, startServer, reinterpret_cast<void*>(&g_servers[i]));
-				t_ids.push_back(t_id);
+				if (!samePort[g_servers[i].getListen()])
+				{
+					pthread_create(&t_id, NULL, startServer, reinterpret_cast<void*>(&g_servers[i]));
+					t_ids.push_back(t_id);
+					t_id_size++;
+				}
+				samePort[g_servers[i].getListen()] = true;
 			}
-
-			for (int i = 1; i < argc; i++)
+			for (int i = 0; i < t_id_size; i++)
 				pthread_join(t_ids[i], NULL);
 		}
 	}

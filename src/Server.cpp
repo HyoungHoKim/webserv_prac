@@ -321,7 +321,6 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 {
     int idx = 0;
     bool isBreak = false;
-
     for (std::vector<ServerConfig>::iterator it = g_servers.begin(); it != g_servers.end(); it++)
     {
         if (this->serv_config.getListen() == it->getListen())
@@ -341,7 +340,6 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
         if (isBreak == true)
             break ;
     }
-    
     if (!check_allowed_methods(req, idx))
     {
         std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << std::endl;
