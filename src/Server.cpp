@@ -320,14 +320,34 @@ bool Server::check_allowed_methods(HTTPRequest *req, int &idx)
 void Server::handleRequest(Client *cl, HTTPRequest *req)
 {
     int idx = 0;
+    bool isBreak = false;
 
+    for (std::vector<ServerConfig>::iterator it = g_servers.begin(); it != g_servers.end(); it++)
+    {
+        if (this->serv_config.getListen() == it->getListen())
+        {
+            std::string host = req->getHeaderValue("Host");
+            int size = it->getServerName().size();
+            for (int i = 0; i < size; i++)
+            {
+                if (host == it->getServerName()[i])
+                {
+                    this->serv_config = *it;
+                    isBreak = true;
+                    break ;
+                }
+            }
+        }
+        if (isBreak == true)
+            break ;
+    }
+    
     if (!check_allowed_methods(req, idx))
     {
         std::cout << "[" << cl->getClientIP() << "] Could not handle or determine request of type " << req->methodIntToStr(req->getMethod()) << std::endl;
         sendStatusResponse(cl, Status(METHOD_NOT_ALLOW));
         return;
     }
-
     size_t max_body = this->serv_config.getLocations()[idx].getClientMaxBodySize();
     if (req->getRequestUri().find(this->serv_config.getLocations()[idx].getCgiExt()) != std::string::npos)
         this->isCgi = true;

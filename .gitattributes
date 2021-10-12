@@ -1,0 +1,2 @@
+www/YoupiBanane/youpi.bla filter=lfs diff=lfs merge=lfs -text
+www/YoupiBanane/youpla.bla filter=lfs diff=lfs merge=lfs -text
