@@ -195,7 +195,7 @@ void Server::run(void)
                         disconnected_client(clientMap[curr_event->ident]);
 
                     add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-                    add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);                                               
+                    add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
                 }
                 if (curr_event->filter == EVFILT_WRITE)
                 {
@@ -321,7 +321,7 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
 {
     int idx = 0;
 
-    // host 
+    // host
 
     if (!check_allowed_methods(req, idx))
     {
@@ -331,8 +331,7 @@ void Server::handleRequest(Client *cl, HTTPRequest *req)
     }
 
     size_t max_body = this->serv_config.getLocations()[idx].getClientMaxBodySize();
-    if (req->getRequestUri().find(this->serv_config.getLocations()[idx].getCgiExt()) != std::string::npos 
-        && this->serv_config.getLocations()[idx].getCgiExt() != "")
+    if (req->getRequestUri().find(this->serv_config.getLocations()[idx].getCgiExt()) != std::string::npos && this->serv_config.getLocations()[idx].getCgiExt() != "")
         this->isCgi = true;
 
     if (idx != 0 && this->serv_config.getLocations()[idx].getStatusCode() != 0 && this->serv_config.getLocations()[idx].getRedir() != "")
@@ -391,10 +390,11 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
             req->setData(r->getData(), r->getSize());
         else
         {
-            std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
+            std::cout << "[" << cl->getClientIP() << "] "
+                      << "File not found: " << uri << std::endl;
             sendStatusResponse(cl, Status(NOT_FOUND));
             delete resp;
-            return ;
+            return;
         }
         executeCgi(cl, req);
         parseCGI(req, resp, Method(GET));
@@ -428,7 +428,8 @@ void Server::handleGet(Client *cl, HTTPRequest *req, size_t maxBody)
     }
     else
     {
-        std::cout << "[" << cl->getClientIP() << "] " << "File not found: " << uri << std::endl;
+        std::cout << "[" << cl->getClientIP() << "] "
+                  << "File not found: " << uri << std::endl;
         sendStatusResponse(cl, Status(NOT_FOUND));
         delete resp;
     }
@@ -490,17 +491,17 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp, int method)
             pos++;
     }
     while (body[bodyPos] == '\r' || body[bodyPos] == '\n')
-		bodyPos++;
-	byte* parseBody = new byte[body.length() - bodyPos + 1];
-	bzero(parseBody, body.length() - bodyPos + 1);
-	memcpy(parseBody, reinterpret_cast<unsigned char*>(&body[bodyPos]), body.length() - bodyPos + 1);
+        bodyPos++;
+    byte *parseBody = new byte[body.length() - bodyPos + 1];
+    bzero(parseBody, body.length() - bodyPos + 1);
+    memcpy(parseBody, reinterpret_cast<unsigned char *>(&body[bodyPos]), body.length() - bodyPos + 1);
     if (method == Method(POST) || method == Method(PUT))
     {
-        byte* temp = req->getData();
+        byte *temp = req->getData();
         if (temp)
             delete temp;
     }
-	req->setData(parseBody, body.length() - bodyPos);
+    req->setData(parseBody, body.length() - bodyPos);
 }
 
 void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
@@ -522,11 +523,13 @@ void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
         // 생성 후 데이터 입력
         std::ofstream fout(path);
         if (!fout)
-		{
-			std::cout << "[" << cl->getClientIP() << "] " << "Cannot Create Dir: " << path << std::endl;
-			sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
-			return ;
-		}
+        {
+            std::cout << "[" << cl->getClientIP() << "] "
+                      << "Cannot Create Dir: " << path << std::endl;
+            sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
+            delete resp;
+            return;
+        }
         fout << req->getData();
         fout.close();
 
@@ -595,11 +598,13 @@ void Server::handlePut(Client *cl, HTTPRequest *req, size_t maxBody)
         path = r->getLocation();
     std::ofstream fout(path);
     if (!fout)
-	{
-		std::cout << "[" << cl->getClientIP() << "] " << "Cannot Create Dir: " << path << std::endl;
-		sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
-		return ;	
-	}
+    {
+        std::cout << "[" << cl->getClientIP() << "] "
+                  << "Cannot Create Dir: " << path << std::endl;
+        sendStatusResponse(cl, Status(NOT_IMPLEMENTED));
+        delete resp;
+        return;
+    }
     fout << req->getData();
     fout.close();
 
@@ -739,7 +744,7 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
     char **argv = NULL;
     char **env = NULL;
     std::cout << "execute Cgi here" << std::endl;
-    argv = new char*[sizeof(char *) * 3];
+    argv = new char *[sizeof(char *) * 3];
     std::string path = "./cgi-bin/cgi_tester";
     argv[0] = strdup(path.c_str());
     std::string cgiUri = resHost->getBaseDiskPath() + req->getRequestUri();
@@ -755,19 +760,31 @@ void Server::executeCgi(Client *cl, HTTPRequest *req)
         dup2(fd[0], 0);
         dup2(tmp_fd, 1);
         execve(path.c_str(), argv, env);
-		exit(0);
+        std::cout << &argv[1] << std::endl;
+        delete argv[0];
+        delete argv[1];
+        delete[] argv;
+        close(tmp_fd);
+        exit(0);
     }
     else
     {
         close(fd[0]);
         write(fd[1], req->getData(), req->getDataLength());
-		close(fd[1]);
-
-		waitpid(pid, 0, 0);
+        close(fd[1]);
+        close(tmp_fd);
+        waitpid(pid, 0, 0);
+        delete argv[0];
+        delete argv[1];
     }
     dup2(0, fd[0]);
-    free(argv);
-    free(env);
+    delete[] argv;
+    int i = -1;
+    while (env[++i] != 0)
+    {
+        delete env[i];
+    }
+    delete[] env;
 }
 
 char **Server::setEnv(Client *cl, HTTPRequest *req)
@@ -780,7 +797,7 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
     cgienv["CONTENT_TYPE"] = "text/html";
     cgienv["GATEWAY_INTERFACE"] = "CGI/1.1";
     cgienv["PATH_INFO"] = resHost->getBaseDiskPath() + req->getRequestUri();
-    cgienv["REMOTE_ADDR"] = cl->getClientIP();                       // good ex) "127.0.0.1"
+    cgienv["REMOTE_ADDR"] = cl->getClientIP(); // good ex) "127.0.0.1"
     if (req->getMethod() == GET)
     {
         cgienv["REQUEST_METHOD"] = "GET"; // good ex) "GET"
@@ -799,7 +816,7 @@ char **Server::setEnv(Client *cl, HTTPRequest *req)
     for (iter = req->getHeader()->begin(); iter != req->getHeader()->end(); iter++)
         cgienv["HTTP_" + iter->first] = iter->second;
 
-    env = new char*[sizeof(char*) * (cgienv.size() + 1)];
+    env = new char *[sizeof(char *) * (cgienv.size() + 1)];
     std::map<std::string, std::string>::iterator it = cgienv.begin();
     int i = 0;
     while (it != cgienv.end())
