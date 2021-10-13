@@ -520,6 +520,7 @@ void Server::parseCGI(HTTPRequest *req, HTTPResponse *resp, int method, int fd)
     req->setData(parseBody, body.length() - bodyPos);
     if (!remove(filename[fd]))
         postCnt[fd] += 1;
+    delete filename[fd];
 }
 
 void Server::handlePost(Client *cl, HTTPRequest *req, size_t maxBody)
