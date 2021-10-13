@@ -193,18 +193,9 @@ void Server::run(void)
                 {
                     if (!readClient(clientMap[curr_event->ident], curr_event->data))
                         disconnected_client(clientMap[curr_event->ident]);
-
-                    add_kevent(curr_event->ident, EVFILT_READ, EV_DISABLE, 0, 0, NULL);
-                    add_kevent(curr_event->ident, EVFILT_WRITE, EV_ENABLE, 0, 0, NULL);
                 }
                 if (curr_event->filter == EVFILT_WRITE)
-                {
-                    if (!writeClient(clientMap[curr_event->ident], curr_event->data))
-                    {
-                        add_kevent(curr_event->ident, EVFILT_READ, EV_ENABLE, 0, 0, NULL);
-                        add_kevent(curr_event->ident, EVFILT_WRITE, EV_DISABLE, 0, 0, NULL);
-                    }
-                }
+                    writeClient(clientMap[curr_event->ident], curr_event->data);                
             }
         }
     }
@@ -239,7 +230,6 @@ bool Server::readClient(Client *cl, int data_len)
     else if (status == Parsing(COMPLETE))
     {
         handleRequest(cl, cl->getRequset());
-        cl->getRequset()->printData();
         cl->deleteRequest();
         return (true);
     }
